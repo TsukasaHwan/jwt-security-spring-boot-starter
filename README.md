@@ -1,27 +1,29 @@
 # JWT Security Spring Boot Starter
 
+**版本要求**  Spring Boot 3.X | JDK 17  +
+
 一个集成Spring Security的JWT认证框架，为Spring Boot应用提供完善的令牌管理功能，包含刷新令牌撤销和访问令牌黑名单等核心安全特性。
 
 ---
 
 ## 核心特性
 
-- **JWT认证**  
+- **JWT认证**
   基于JSON Web Token实现无状态认证体系
-- **双令牌架构**  
+- **双令牌架构**
   支持短时效访问令牌（Access Token）与长时效刷新令牌（Refresh Token）
 - **安全增强**
     - 刷新令牌撤销机制
     - 访问令牌黑名单功能
     - 主体一致性校验
     - RSA256加密
-- **存储抽象**  
+- **存储抽象**
   支持Redis和Caffeine两种存储方案
 - **Spring Security集成**
     - 自定义认证过滤器链
     - 线程安全上下文传播
     - 支持`@PermitAll`注解路径发现
-- **灵活配置**  
+- **灵活配置**
   通过配置文件实现全参数控制
 
 ---
@@ -463,8 +465,8 @@ sequenceDiagram 客户端->>认证服务器: 发送刷新请求（携带Refresh 
    @Bean
    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
        CorsConfiguration config = new CorsConfiguration();
-       config.addAllowedOrigin("*");
-       return new UrlBasedCorsConfigurationSource();
+       config.addAllowedOriginPattern(CorsConfiguration.ALL);
+       return new UrlBasedCorsConfigurationSource("/**", config);
    }
    ```
 
