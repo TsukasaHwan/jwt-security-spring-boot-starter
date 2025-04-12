@@ -9,8 +9,8 @@
     <version>1.0.0</version>
 
     <name>jwt-security-spring-boot-starter</name>
-    <description>一个集成Spring Security的JWT认证框架，为Spring
-        Boot应用提供完善的令牌管理功能，包含刷新令牌撤销和访问令牌黑名单等核心安全特性
+    <description>
+        一个集成Spring Security的JWT认证框架，为Spring Boot应用提供完善的令牌管理功能，包含刷新令牌撤销和访问令牌黑名单等核心安全特性
     </description>
     <url>https://github.com/TsukasaHwan/jwt-security-spring-boot-starter</url>
 
