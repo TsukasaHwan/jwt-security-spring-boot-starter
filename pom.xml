@@ -158,6 +158,9 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
+                        <configuration>
+                            <doclint>none</doclint>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -165,9 +168,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
                 <version>3.2.5</version>
-                <configuration>
-                    <executable>D:\Program Files (x86)\GnuPG\bin\gpg.exe</executable>
-                </configuration>
                 <executions>
                     <execution>
                         <id>sign-artifacts</id>
