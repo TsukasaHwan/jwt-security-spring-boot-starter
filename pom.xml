@@ -4,9 +4,32 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.TsukasaHwan</groupId>
+    <groupId>io.github.tsukasahwan</groupId>
     <artifactId>jwt-security-spring-boot-starter</artifactId>
     <version>1.0.0</version>
+
+    <name>jwt-security-spring-boot-starter</name>
+    <description>一个集成Spring Security的JWT认证框架，为Spring
+        Boot应用提供完善的令牌管理功能，包含刷新令牌撤销和访问令牌黑名单等核心安全特性
+    </description>
+    <url>https://github.com/TsukasaHwan/jwt-security-spring-boot-starter</url>
+
+    <developers>
+        <developer>
+            <id></id>
+            <name>曹焕</name>
+            <email>785415580@qq.com</email>
+            <timezone>GMT+8</timezone>
+            <organizationUrl>https://github.com/TsukasaHwan</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/TsukasaHwan/jwt-security-spring-boot-starter/tree/master</url>
+        <connection>scm:git:https://github.com/TsukasaHwan/jwt-security-spring-boot-starter.git</connection>
+        <developerConnection>scm:git:https://github.com/TsukasaHwan/jwt-security-spring-boot-starter.git
+        </developerConnection>
+    </scm>
 
     <properties>
         <java.version>17</java.version>
@@ -108,7 +131,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -117,6 +140,32 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <executable>D:\Program Files (x86)\GnuPG\bin\gpg.exe</executable>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
