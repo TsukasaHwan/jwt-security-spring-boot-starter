@@ -1,6 +1,6 @@
 # JWT Security Spring Boot Starter
 
-**版本要求**  Spring Boot 3.X | JDK 17  +
+**版本要求**  Spring Boot 3.X | JDK 17+
 
 一个集成Spring Security的JWT认证框架，为Spring Boot应用提供完善的令牌管理功能，包含刷新令牌撤销和访问令牌黑名单等核心安全特性。
 
