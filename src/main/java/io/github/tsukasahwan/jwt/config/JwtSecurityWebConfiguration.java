@@ -10,10 +10,10 @@ import io.github.tsukasahwan.jwt.util.ClassUtils;
 import io.github.tsukasahwan.jwt.util.JwtUtils;
 import jakarta.annotation.security.PermitAll;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -49,7 +49,7 @@ import java.util.Set;
  * @since 2023/03/14
  */
 @EnableWebSecurity
-@AutoConfiguration
+@Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(JwtSecurityProperties.class)
 @EnableMethodSecurity(securedEnabled = true)
 @Import({JwtSecurityCoreConfiguration.class, TokenSecurityConfiguration.class})

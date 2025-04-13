@@ -6,9 +6,9 @@ import io.github.tsukasahwan.jwt.security.authentication.NoOpAuthenticationSucce
 import io.github.tsukasahwan.jwt.security.authenticator.AccessTokenAuthenticator;
 import io.github.tsukasahwan.jwt.security.authenticator.RefreshTokenAuthenticator;
 import io.github.tsukasahwan.jwt.security.authenticator.TokenAuthenticatorRegistry;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,7 +25,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
  * @author Teamo
  * @since 2025/4/3
  */
-@AutoConfiguration
+@Configuration(proxyBeanMethods = false)
 public class JwtSecurityCoreConfiguration {
 
     @Bean
