@@ -45,7 +45,7 @@
 #### Gradle
 
 ```groovy
-implementation 'com.github.TsukasaHwan:jwt-security-spring-boot-starter:${version}'
+implementation 'io.github.tsukasahwan:jwt-security-spring-boot-starter:${version}'
 ```
 
 ### 2. 基础配置
