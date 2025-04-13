@@ -8,6 +8,7 @@ import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.core.token.AccessToken;
 import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.core.token.RefreshToken;
+import io.github.tsukasahwan.jwt.filter.JwtAuthenticationFilter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtBuilder;
@@ -27,8 +28,6 @@ import java.util.Map;
  * @since 2023/3/26
  */
 public class JwtUtils {
-
-    private static final String JWT_TOKEN_REQUEST_ATTRIBUTE = "JWT_TOKEN";
 
     private static final char TOKEN_CONNECTOR_CHAT = ' ';
 
@@ -173,10 +172,10 @@ public class JwtUtils {
      */
     public static JwtToken getJwtToken(HttpServletRequest request) {
         Assert.notNull(request, "HttpServletRequest must not be null");
-        JwtToken jwtToken = (JwtToken) request.getAttribute(JWT_TOKEN_REQUEST_ATTRIBUTE);
+        JwtToken jwtToken = (JwtToken) request.getAttribute(JwtAuthenticationFilter.JWT_TOKEN);
         if (jwtToken == null) {
             jwtToken = parseToken(getTokenValue(request));
-            request.setAttribute(JWT_TOKEN_REQUEST_ATTRIBUTE, jwtToken);
+            request.setAttribute(JwtAuthenticationFilter.JWT_TOKEN, jwtToken);
         }
         return jwtToken;
     }
