@@ -6,7 +6,6 @@ import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.support.PathPatternRequestMatcher;
 import io.github.tsukasahwan.jwt.util.ClassUtils;
-import io.github.tsukasahwan.jwt.util.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -107,7 +106,7 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (username != null && securityContext.getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (validateToken(authToken, userDetails.getUsername())) {
+            if (username.equals(userDetails.getUsername())) {
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, authToken, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 return authentication;
@@ -133,13 +132,5 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
         } else {
             return pathPatternsCondition.getFirstPattern().getPatternString();
         }
-    }
-
-    private boolean validateToken(String token, String subject) {
-        if (token == null || subject == null) {
-            return false;
-        }
-        final String tokenSubject = JwtUtils.parseToken(token).getJws().getPayload().getSubject();
-        return (tokenSubject != null && tokenSubject.equals(subject));
     }
 }
