@@ -36,7 +36,7 @@
 
 ```xml
 <dependency>
-    <groupId>com.github.TsukasaHwan</groupId>
+    <groupId>com.github.tsukasahwan</groupId>
     <artifactId>jwt-security-spring-boot-starter</artifactId>
     <version>${version}</version>
 </dependency>
