@@ -17,7 +17,7 @@ import org.springframework.data.redis.core.RedisTemplate;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnClass(RedisTemplate.class)
-@ConditionalOnProperty(name = "jwt.security.token-security.storage-type", havingValue = "redis")
+@ConditionalOnProperty(name = "jwt.security.token-security.storage-type", havingValue = "redis", matchIfMissing = true)
 public class RedisRefreshTokenRevokeConfig extends RedisTokenStorageConfig {
 
     protected RedisRefreshTokenRevokeConfig(JwtSecurityProperties jwtSecurityProperties) {
