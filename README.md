@@ -223,7 +223,7 @@ public class SecurityDemoApplication {
        @GetMapping("/users/login")
        public ResponseEntity<Jwt> login(@RequestParam String username,
                                         @RequestParam String password) {
-                   UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+           UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
            authenticationManager.authenticate(authenticationToken);
            Jwt jwt = jwtAuthenticationManager.login(username);
            return ResponseEntity.ok(jwt);
