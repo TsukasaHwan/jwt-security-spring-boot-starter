@@ -30,7 +30,7 @@ import java.io.IOException;
  */
 public class JwtAuthenticationFilter extends AbstractAuthenticationFilter {
 
-    public static final String JWT_TOKEN = JwtAuthenticationFilter.class.getName() + "_JWT_TOKEN";
+    public static final String JWT_TOKEN = JwtAuthenticationFilter.class.getName() + ".JWT_TOKEN";
 
     private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
