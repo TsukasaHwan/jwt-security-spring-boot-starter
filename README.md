@@ -276,7 +276,20 @@ public class DemoController {
 ### 自定义存储方案
 使用Redis或Caffeine缓存：
 
+```xml
+<!--自行选择，根据storage-type任意引入其一即可-->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>com.github.ben-manes.caffeine</groupId>
+    <artifactId>caffeine</artifactId>
+</dependency>
+```
+
 ```yaml
+# 内置存储方案
 jwt:
   security:
     token-security:
@@ -289,6 +302,11 @@ jwt:
         key-prefix: 'jwt:access_token:blacklist:'
       # redis 或 Caffeine
       storage-type: redis
+# 自定义存储方案（只需要开启即可，自行实现AccessTokenBlacklistManager和RefreshTokenRevokeManager，注入IOC即可）
+jwt:
+  security:
+    token-security:
+      enabled: true
 ```
 
 ### 配置刷新令牌端点
@@ -321,7 +339,7 @@ jwt:
       access-token-blacklist:
         enabled: true
         key-prefix: 'jwt:access_token:blacklist:'
-      # 支持redis和caffeine（默认使用redis，如需使用caffeine请自行引入caffeine类库）
+      # 支持redis和caffeine（如需自定义缺省即可，自行实现AccessTokenBlacklistManager和RefreshTokenRevokeManager，然后注入IOC）
       storage-type: redis
 ```
 
@@ -451,6 +469,7 @@ sequenceDiagram 客户端->>认证服务器: 发送刷新请求（携带Refresh 
        allowed-clock-skew: 1m
        token-security:
          enabled: true
+         storage-type: redis
          refresh-token-revoke:
            enabled: true
          access-token-blacklist:

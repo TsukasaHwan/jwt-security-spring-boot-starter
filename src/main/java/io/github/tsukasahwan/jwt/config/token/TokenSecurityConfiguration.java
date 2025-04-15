@@ -1,6 +1,8 @@
 package io.github.tsukasahwan.jwt.config.token;
 
 import io.github.tsukasahwan.jwt.config.properties.JwtSecurityProperties;
+import io.github.tsukasahwan.jwt.config.token.storage.caffeine.CaffeineTokenStorageConfig;
+import io.github.tsukasahwan.jwt.config.token.storage.redis.RedisTokenStorageConfig;
 import io.github.tsukasahwan.jwt.security.authentication.DefaultJwtAuthenticationManager;
 import io.github.tsukasahwan.jwt.security.authenticator.AccessTokenAuthenticator;
 import io.github.tsukasahwan.jwt.security.authenticator.RefreshTokenAuthenticator;
@@ -21,7 +23,7 @@ import org.springframework.util.Assert;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(value = {JwtSecurityProperties.class})
 @ConditionalOnProperty(value = "jwt.security.token-security.enabled", havingValue = "true")
-@Import({AccessTokenBlacklistConfiguration.class, RefreshTokenRevokeConfiguration.class})
+@Import({CaffeineTokenStorageConfig.class, RedisTokenStorageConfig.class})
 public class TokenSecurityConfiguration {
 
     public final JwtSecurityProperties jwtSecurityProperties;
