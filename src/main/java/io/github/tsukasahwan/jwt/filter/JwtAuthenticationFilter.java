@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.filter;
 
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.exception.JwtAuthenticationException;
 import io.github.tsukasahwan.jwt.security.authenticator.AbstractTokenAuthenticator;
 import io.github.tsukasahwan.jwt.security.authenticator.TokenAuthenticatorRegistry;
@@ -44,8 +44,8 @@ public class JwtAuthenticationFilter extends AbstractAuthenticationFilter {
         }
 
         JwtToken jwtToken = JwtUtils.getJwtToken(request);
-        JwtTokenType tokenType = jwtToken.getGenericJwtToken().getTokenType();
-        AbstractTokenAuthenticator authenticator = this.tokenAuthenticatorRegistry.getTokenAuthenticator(tokenType);
+        JwtGrantType grantType = jwtToken.getGrantType();
+        AbstractTokenAuthenticator authenticator = this.tokenAuthenticatorRegistry.getTokenAuthenticator(grantType);
         return authenticator.authenticate(request, jwtToken);
     }
 

@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.authenticator;
 
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.exception.AccessTokenBlacklistedException;
 import io.github.tsukasahwan.jwt.security.token.AccessTokenBlacklistManager;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,8 +23,8 @@ public class AccessTokenAuthenticator extends AbstractTokenAuthenticator {
     }
 
     @Override
-    protected JwtTokenType getTokenType() {
-        return JwtTokenType.ACCESS_TOKEN;
+    protected JwtGrantType getGrantType() {
+        return JwtGrantType.ACCESS_TOKEN;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class AccessTokenAuthenticator extends AbstractTokenAuthenticator {
             return null;
         }
 
-        checkBlacklistIfEnabled(token.getTokenValue());
+        checkBlacklistIfEnabled(token);
 
         return doAuthenticate(request, token);
     }
@@ -54,9 +54,9 @@ public class AccessTokenAuthenticator extends AbstractTokenAuthenticator {
         this.enabledAccessTokenBlacklist = enabledAccessTokenBlacklist;
     }
 
-    private void checkBlacklistIfEnabled(String accessToken) {
+    private void checkBlacklistIfEnabled(JwtToken accessToken) {
         if (this.enabledAccessTokenBlacklist && this.accessTokenBlacklistManager.isBlacklisted(accessToken)) {
-            throw new AccessTokenBlacklistedException("Access token is blacklisted: " + accessToken);
+            throw new AccessTokenBlacklistedException("Access token is blacklisted: " + accessToken.getTokenValue());
         }
     }
 }

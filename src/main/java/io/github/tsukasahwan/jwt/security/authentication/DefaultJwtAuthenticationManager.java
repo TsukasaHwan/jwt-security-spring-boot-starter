@@ -1,15 +1,13 @@
 package io.github.tsukasahwan.jwt.security.authentication;
 
 import io.github.tsukasahwan.jwt.core.Jwt;
-import io.github.tsukasahwan.jwt.core.token.AccessToken;
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
-import io.github.tsukasahwan.jwt.core.token.RefreshToken;
+import io.github.tsukasahwan.jwt.core.JwtClaimsSet;
+import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.security.token.AccessTokenBlacklistManager;
 import io.github.tsukasahwan.jwt.security.token.RefreshTokenRevokeManager;
 import io.github.tsukasahwan.jwt.util.JwtUtils;
 
-import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -28,76 +26,68 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
 
     @Override
     public Jwt login(String subject) {
-        String refreshTokenValue = JwtUtils.refreshToken(subject);
+        JwtToken refreshToken = JwtUtils.refreshToken(subject);
 
-        saveRefreshTokenIfEnabledRevoke(refreshTokenValue);
+        saveRefreshTokenIfEnabledRevoke(refreshToken);
 
-        return create(JwtUtils.accessToken(subject), refreshTokenValue);
+        return create(JwtUtils.accessToken(subject), refreshToken);
     }
 
     @Override
-    public Jwt login(AccessToken accessToken, RefreshToken refreshToken) {
-        validateToken(accessToken, refreshToken);
+    public Jwt login(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims) {
+        validateClaims(accessClaims, refreshClaims);
 
-        String refreshTokenValue = JwtUtils.refreshToken(refreshToken);
+        JwtToken refreshJwtToken = JwtUtils.token(refreshClaims);
 
-        saveRefreshTokenIfEnabledRevoke(refreshTokenValue);
+        saveRefreshTokenIfEnabledRevoke(refreshJwtToken);
 
-        return create(JwtUtils.accessToken(accessToken), refreshTokenValue);
+        return create(JwtUtils.token(accessClaims), refreshJwtToken);
     }
 
     @Override
-    public Jwt refresh(String subject, String refreshTokenValue) {
-        validateTokenSubject(subject, refreshTokenValue);
+    public Jwt refresh(String subject, JwtToken refreshToken) {
+        validateTokenSubject(subject, refreshToken);
 
-        revokeRefreshTokenIfEnabled(refreshTokenValue);
+        revokeRefreshTokenIfEnabled(refreshToken);
 
-        String newRefreshToken = JwtUtils.refreshToken(subject);
+        JwtToken newRefreshJwtToken = JwtUtils.refreshToken(subject);
+        saveRefreshTokenIfEnabledRevoke(newRefreshJwtToken);
+
+        JwtToken newAccessJwtToken = JwtUtils.accessToken(subject);
+        return create(newAccessJwtToken, newRefreshJwtToken);
+    }
+
+    @Override
+    public Jwt refresh(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims, JwtToken refreshToken) {
+        validateClaims(accessClaims, refreshClaims);
+        validateTokenSubject(accessClaims.getSubject(), refreshToken);
+
+        revokeRefreshTokenIfEnabled(refreshToken);
+
+        JwtToken newRefreshToken = JwtUtils.token(refreshClaims);
         saveRefreshTokenIfEnabledRevoke(newRefreshToken);
 
-        String newAccessToken = JwtUtils.accessToken(subject);
+        JwtToken newAccessToken = JwtUtils.token(accessClaims);
         return create(newAccessToken, newRefreshToken);
     }
 
     @Override
-    public Jwt refresh(AccessToken accessToken, RefreshToken refreshToken, String refreshTokenValue) {
-        validateToken(accessToken, refreshToken);
-        validateTokenSubject(accessToken.getSubject(), refreshTokenValue);
-
-        revokeRefreshTokenIfEnabled(refreshTokenValue);
-
-        String newRefreshToken = JwtUtils.refreshToken(refreshToken);
-        saveRefreshTokenIfEnabledRevoke(newRefreshToken);
-
-        String newAccessToken = JwtUtils.accessToken(accessToken);
-        return create(newAccessToken, newRefreshToken);
-    }
-
-    @Override
-    public void logout(String subject, String accessTokenValue) {
-        validateTokenSubject(subject, accessTokenValue);
+    public void logout(String subject, JwtToken accessToken) {
+        validateTokenSubject(subject, accessToken);
 
         revokeAllRefreshTokenIfEnabled(subject);
-        addAccessTokenToBlacklistIfEnabled(accessTokenValue);
+        addAccessTokenToBlacklistIfEnabled(accessToken);
     }
 
-    /**
-     * 验证访问令牌和刷新令牌的有效性
-     *
-     * @param accessToken  需要验证的访问令牌对象（不可为null）
-     * @param refreshToken 需要验证的刷新令牌对象（不可为null）
-     * @throws IllegalArgumentException 当任一令牌参数为null时抛出
-     * @throws InvalidTokenException    当令牌主题不一致时抛出
-     */
-    private void validateToken(AccessToken accessToken, RefreshToken refreshToken) {
-        if (accessToken == null) {
+    private void validateClaims(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims) {
+        if (accessClaims == null) {
             throw new IllegalArgumentException("AccessToken cannot be null");
         }
-        if (refreshToken == null) {
+        if (refreshClaims == null) {
             throw new IllegalArgumentException("RefreshToken cannot be null");
         }
-        String accessSubject = accessToken.getSubject();
-        String refreshSubject = refreshToken.getSubject();
+        String accessSubject = accessClaims.getSubject();
+        String refreshSubject = refreshClaims.getSubject();
         if (!Objects.equals(accessSubject, refreshSubject)) {
             String message = String.format(
                     "Token subjects mismatch (Access token subject: %s, Refresh token subject: %s)",
@@ -111,27 +101,26 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
     /**
      * 验证用户主体与令牌中的主体标识是否匹配
      *
-     * @param subject    用户主体标识（不可为null）
-     * @param tokenValue 需要验证的令牌字符串（不可为null）
-     * @throws IllegalArgumentException 当主体或令牌值为null时抛出
-     * @throws InvalidTokenException    当令牌解析失败或主体不匹配时抛出
+     * @param subject 用户主体标识（不可为null）
+     * @param token   需要验证的令牌（不可为null）
+     * @throws IllegalArgumentException 当主体或令牌为null时抛出
+     * @throws InvalidTokenException    当主体不匹配时抛出
      */
-    private void validateTokenSubject(String subject, String tokenValue) {
+    private void validateTokenSubject(String subject, JwtToken token) {
         if (subject == null) {
             throw new IllegalArgumentException("Subject cannot be null");
         }
-        if (tokenValue == null) {
-            throw new IllegalArgumentException("Token value cannot be null");
+        if (token == null) {
+            throw new IllegalArgumentException("Token cannot be null");
         }
-        GenericJwtToken genericJwtToken = JwtUtils.parseToken(tokenValue).getGenericJwtToken();
-        String tokenSubject = genericJwtToken.getSubject();
+        String tokenSubject = token.getSubject();
         if (!Objects.equals(subject, tokenSubject)) {
-            String tokenType = genericJwtToken.getTokenType().getValue();
+            String grantType = token.getGrantType().getValue();
             String message = String.format(
-                    "Subject mismatch (Provided: %s, Token subject: %s, Token type: '%s')",
+                    "Subject mismatch (Provided: %s, Token subject: %s, Grant type: '%s')",
                     subject,
                     tokenSubject,
-                    tokenType
+                    grantType
             );
             throw new InvalidTokenException(message);
         }
@@ -144,14 +133,11 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
      * @param refreshToken 刷新令牌
      * @return {@link Jwt}
      */
-    private Jwt create(String accessToken, String refreshToken) {
-        Instant expiresAt = JwtUtils.parseToken(accessToken)
-                .getGenericJwtToken()
-                .getExpiresAt();
+    private Jwt create(JwtToken accessToken, JwtToken refreshToken) {
         return Jwt.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .expiresIn(expiresAt.toEpochMilli())
+                .accessToken(accessToken.getTokenValue())
+                .refreshToken(refreshToken.getTokenValue())
+                .expiresIn(accessToken.getExpiresAt().toEpochMilli())
                 .build();
     }
 
@@ -190,24 +176,24 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
     /**
      * 当启用刷新令牌撤销功能时，保存指定的刷新令牌以备后续撤销
      *
-     * @param refreshTokenValue 需要保存的刷新令牌字符串值
-     *                          仅在启用刷新令牌撤销功能时执行实际存储操作
+     * @param refreshToken 需要保存的刷新令牌
+     *                     仅在启用刷新令牌撤销功能时执行实际存储操作
      */
-    private void saveRefreshTokenIfEnabledRevoke(String refreshTokenValue) {
+    private void saveRefreshTokenIfEnabledRevoke(JwtToken refreshToken) {
         if (this.enabledRefreshTokenRevoke) {
-            this.refreshTokenRevokeManager.save(refreshTokenValue);
+            this.refreshTokenRevokeManager.save(refreshToken);
         }
     }
 
     /**
      * 当启用刷新令牌撤销功能时，撤销指定的刷新令牌
      *
-     * @param refreshTokenValue 需要撤销的刷新令牌字符串值
-     *                          仅在启用刷新令牌撤销功能时执行实际撤销操作
+     * @param refreshToken 需要撤销的刷新令牌
+     *                     仅在启用刷新令牌撤销功能时执行实际撤销操作
      */
-    private void revokeRefreshTokenIfEnabled(String refreshTokenValue) {
+    private void revokeRefreshTokenIfEnabled(JwtToken refreshToken) {
         if (this.enabledRefreshTokenRevoke) {
-            this.refreshTokenRevokeManager.revoke(refreshTokenValue);
+            this.refreshTokenRevokeManager.revoke(refreshToken);
         }
     }
 
@@ -227,12 +213,12 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
     /**
      * 当启用访问令牌黑名单功能时，将指定的访问令牌加入黑名单
      *
-     * @param accessTokenValue 需要加入黑名单的访问令牌字符串值
-     *                         仅在启用访问令牌黑名单功能时执行实际添加操作
+     * @param accessToken 需要加入黑名单的访问令牌
+     *                    仅在启用访问令牌黑名单功能时执行实际添加操作
      */
-    private void addAccessTokenToBlacklistIfEnabled(String accessTokenValue) {
+    private void addAccessTokenToBlacklistIfEnabled(JwtToken accessToken) {
         if (this.enabledAccessTokenBlacklist) {
-            this.accessTokenBlacklistManager.addToBlacklist(accessTokenValue);
+            this.accessTokenBlacklistManager.addToBlacklist(accessToken);
         }
     }
 }

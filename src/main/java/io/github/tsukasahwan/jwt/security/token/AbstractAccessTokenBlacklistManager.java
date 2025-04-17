@@ -1,10 +1,8 @@
 package io.github.tsukasahwan.jwt.security.token;
 
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
-import io.github.tsukasahwan.jwt.util.JwtUtils;
 
 /**
  * @author Teamo
@@ -22,19 +20,16 @@ public abstract class AbstractAccessTokenBlacklistManager implements AccessToken
         return this.keyPrefix + jti;
     }
 
-    protected GenericJwtToken validate(String accessToken) {
-        if (accessToken == null || accessToken.isBlank()) {
+    protected void validate(JwtToken jwtToken) {
+        if (jwtToken == null || jwtToken.getTokenValue().isBlank()) {
             throw new InvalidTokenException("Access Token cannot be empty");
         }
-        JwtToken jwtToken = JwtUtils.parseToken(accessToken);
-        GenericJwtToken genericJwtToken = jwtToken.getGenericJwtToken();
-        if (!JwtTokenType.ACCESS_TOKEN.equals(genericJwtToken.getTokenType())) {
-            throw new InvalidTokenException("Token must be an access token. Actual type: " + genericJwtToken.getTokenType().getValue());
+        if (!JwtGrantType.ACCESS_TOKEN.equals(jwtToken.getGrantType())) {
+            throw new InvalidTokenException("Token must be an access token. Actual type: " + jwtToken.getGrantType().getValue());
         }
-        if (genericJwtToken.getJti() == null || genericJwtToken.getJti().isBlank()) {
-            throw new InvalidTokenException("Access token must contain jti claim. Token: " + accessToken);
+        if (jwtToken.getId() == null || jwtToken.getId().isBlank()) {
+            throw new InvalidTokenException("Access token must contain jti claim. Token: " + jwtToken.getTokenValue());
         }
-        return genericJwtToken;
     }
 
     public String getKeyPrefix() {

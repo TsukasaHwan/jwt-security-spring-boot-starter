@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.token.storage.caffeine;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
+import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.security.token.AbstractRefreshTokenRevokeManager;
 import io.github.tsukasahwan.jwt.support.CaffeineExpireValue;
 
@@ -24,25 +24,28 @@ public class CaffeineRefreshTokenRevokeManager extends AbstractRefreshTokenRevok
     }
 
     @Override
-    public void save(String refreshToken) {
-        GenericJwtToken genericJwtToken = validate(refreshToken);
-        final String cacheKey = buildKey(genericJwtToken);
-        CaffeineExpireValue<Object> value = createCaffeineExpireValue(refreshToken, genericJwtToken);
+    public void save(JwtToken refreshToken) {
+        this.validate(refreshToken);
+        final String cacheKey = buildKey(refreshToken);
+
+        CaffeineExpireValue<Object> value = createCaffeineExpireValue(refreshToken);
         this.cache.put(cacheKey, value);
     }
 
     @Override
-    public boolean isRevoked(String refreshToken) {
-        GenericJwtToken genericJwtToken = validate(refreshToken);
-        final String cacheKey = buildKey(genericJwtToken);
+    public boolean isRevoked(JwtToken refreshToken) {
+        this.validate(refreshToken);
+        final String cacheKey = buildKey(refreshToken);
+
         CaffeineExpireValue<Object> entity = this.cache.getIfPresent(cacheKey);
         return entity == null;
     }
 
     @Override
-    public void revoke(String refreshToken) {
-        GenericJwtToken genericJwtToken = validate(refreshToken);
-        final String cacheKey = buildKey(genericJwtToken);
+    public void revoke(JwtToken refreshToken) {
+        this.validate(refreshToken);
+        final String cacheKey = buildKey(refreshToken);
+
         this.cache.invalidate(cacheKey);
     }
 
@@ -55,10 +58,10 @@ public class CaffeineRefreshTokenRevokeManager extends AbstractRefreshTokenRevok
         this.cache.invalidateAll(revokeKeys);
     }
 
-    private CaffeineExpireValue<Object> createCaffeineExpireValue(String refreshToken, GenericJwtToken genericJwtToken) {
-        Duration expireTime = Duration.between(Instant.now(), genericJwtToken.getExpiresAt());
+    private CaffeineExpireValue<Object> createCaffeineExpireValue(JwtToken jwtToken) {
+        Duration expireTime = Duration.between(Instant.now(), jwtToken.getExpiresAt());
         CaffeineExpireValue<Object> expireValue = new CaffeineExpireValue<>();
-        expireValue.setValue(refreshToken);
+        expireValue.setValue(jwtToken.getTokenValue());
         expireValue.setTtl(expireTime);
         return expireValue;
     }

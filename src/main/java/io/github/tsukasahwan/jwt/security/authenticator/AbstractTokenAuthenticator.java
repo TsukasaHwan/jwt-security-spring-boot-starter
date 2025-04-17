@@ -2,8 +2,8 @@ package io.github.tsukasahwan.jwt.security.authenticator;
 
 import io.github.tsukasahwan.jwt.annotation.RefreshTokenApi;
 import io.github.tsukasahwan.jwt.config.properties.JwtSecurityProperties;
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.support.PathPatternRequestMatcher;
 import io.github.tsukasahwan.jwt.util.ClassUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +51,7 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
         this.userDetailsService = userDetailsService;
     }
 
-    protected abstract JwtTokenType getTokenType();
+    protected abstract JwtGrantType getGrantType();
 
     public abstract Authentication authenticate(HttpServletRequest request, JwtToken token);
 
@@ -102,7 +102,7 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
 
     protected Authentication doAuthenticate(HttpServletRequest request, JwtToken jwtToken) {
         String authToken = jwtToken.getTokenValue();
-        String username = jwtToken.getGenericJwtToken().getSubject();
+        String username = jwtToken.getSubject();
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (username != null && securityContext.getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);

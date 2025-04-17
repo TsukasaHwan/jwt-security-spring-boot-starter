@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.authenticator;
 
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.exception.RefreshTokenRevokedException;
 import io.github.tsukasahwan.jwt.security.token.RefreshTokenRevokeManager;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,8 +23,8 @@ public class RefreshTokenAuthenticator extends AbstractTokenAuthenticator {
     }
 
     @Override
-    protected JwtTokenType getTokenType() {
-        return JwtTokenType.REFRESH_TOKEN;
+    protected JwtGrantType getGrantType() {
+        return JwtGrantType.REFRESH_TOKEN;
     }
 
     @Override
@@ -33,7 +33,7 @@ public class RefreshTokenAuthenticator extends AbstractTokenAuthenticator {
             return null;
         }
 
-        checkRefreshTokenIfEnabled(token.getTokenValue());
+        checkRefreshTokenIfEnabled(token);
 
         return doAuthenticate(request, token);
     }
@@ -54,9 +54,9 @@ public class RefreshTokenAuthenticator extends AbstractTokenAuthenticator {
         this.enabledRefreshTokenRevoke = enabledRefreshTokenRevoke;
     }
 
-    private void checkRefreshTokenIfEnabled(String refreshToken) {
+    private void checkRefreshTokenIfEnabled(JwtToken refreshToken) {
         if (this.enabledRefreshTokenRevoke && this.refreshTokenRevokeManager.isRevoked(refreshToken)) {
-            throw new RefreshTokenRevokedException("Refresh token has been revoked: " + refreshToken);
+            throw new RefreshTokenRevokedException("Refresh token has been revoked: " + refreshToken.getTokenValue());
         }
     }
 }

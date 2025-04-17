@@ -1,10 +1,8 @@
 package io.github.tsukasahwan.jwt.security.token;
 
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
-import io.github.tsukasahwan.jwt.util.JwtUtils;
 
 /**
  * @author Teamo
@@ -18,23 +16,20 @@ public abstract class AbstractRefreshTokenRevokeManager implements RefreshTokenR
         this.keyPrefix = keyPrefix;
     }
 
-    protected String buildKey(GenericJwtToken genericJwtToken) {
-        return this.keyPrefix + genericJwtToken.getSubject() + ":" + genericJwtToken.getJti();
+    protected String buildKey(JwtToken jwtToken) {
+        return this.keyPrefix + jwtToken.getSubject() + ":" + jwtToken.getId();
     }
 
-    protected GenericJwtToken validate(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
+    protected void validate(JwtToken jwtToken) {
+        if (jwtToken == null || jwtToken.getTokenValue().isBlank()) {
             throw new InvalidTokenException("Refresh Token cannot be empty");
         }
-        JwtToken jwtToken = JwtUtils.parseToken(refreshToken);
-        GenericJwtToken genericJwtToken = jwtToken.getGenericJwtToken();
-        if (!JwtTokenType.REFRESH_TOKEN.equals(genericJwtToken.getTokenType())) {
-            throw new InvalidTokenException("Token must be a refresh token. Actual type: " + genericJwtToken.getTokenType().getValue());
+        if (!JwtGrantType.REFRESH_TOKEN.equals(jwtToken.getGrantType())) {
+            throw new InvalidTokenException("Token must be a refresh token. Actual type: " + jwtToken.getGrantType().getValue());
         }
-        if (genericJwtToken.getJti() == null || genericJwtToken.getJti().isBlank()) {
-            throw new InvalidTokenException("Refresh token must contain jti claim. Token: " + refreshToken);
+        if (jwtToken.getId() == null || jwtToken.getId().isBlank()) {
+            throw new InvalidTokenException("Refresh token must contain jti claim. Token: " + jwtToken.getTokenValue());
         }
-        return genericJwtToken;
     }
 
     public String getKeyPrefix() {

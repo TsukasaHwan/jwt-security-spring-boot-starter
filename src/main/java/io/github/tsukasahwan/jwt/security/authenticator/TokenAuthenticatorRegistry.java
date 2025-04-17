@@ -1,6 +1,6 @@
 package io.github.tsukasahwan.jwt.security.authenticator;
 
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class TokenAuthenticatorRegistry implements InitializingBean, ApplicationContextAware {
 
-    private Map<JwtTokenType, AbstractTokenAuthenticator> authenticatorMap;
+    private Map<JwtGrantType, AbstractTokenAuthenticator> authenticatorMap;
 
     private ApplicationContext context;
 
@@ -28,16 +28,16 @@ public class TokenAuthenticatorRegistry implements InitializingBean, Application
         }
         this.authenticatorMap = new HashMap<>(16);
         beansOfType.values().forEach(authenticator -> {
-            JwtTokenType type = authenticator.getTokenType();
+            JwtGrantType type = authenticator.getGrantType();
             if (type == null) {
                 throw new IllegalStateException(
-                        String.format("Authenticator %s improperly implements getTokenType() - must return non-null JwtTokenType",
+                        String.format("Authenticator %s improperly implements getGrantType() - must return non-null JwtTokenType",
                                 authenticator.getClass().getSimpleName())
                 );
             }
             if (this.authenticatorMap.containsKey(type)) {
                 throw new IllegalStateException(
-                        String.format("Duplicate token type authenticator found for [%s] - Existing: %s, Conflicting: %s",
+                        String.format("Duplicate grant type authenticator found for [%s] - Existing: %s, Conflicting: %s",
                                 type.getValue(),
                                 authenticatorMap.get(type).getClass().getSimpleName(),
                                 authenticator.getClass().getSimpleName())
@@ -52,25 +52,25 @@ public class TokenAuthenticatorRegistry implements InitializingBean, Application
         this.context = applicationContext;
     }
 
-    public AbstractTokenAuthenticator getTokenAuthenticator(JwtTokenType tokenType) {
+    public AbstractTokenAuthenticator getTokenAuthenticator(JwtGrantType grantType) {
         if (authenticatorMap == null || authenticatorMap.isEmpty()) {
             throw new IllegalStateException("Token authenticator registry not initialized - ensure Spring context initialization is complete");
         }
 
-        if (tokenType == null) {
-            throw new IllegalArgumentException("tokenType parameter cannot be null when retrieving authenticator");
+        if (grantType == null) {
+            throw new IllegalArgumentException("grantType parameter cannot be null when retrieving authenticator");
         }
 
-        AbstractTokenAuthenticator authenticator = authenticatorMap.get(tokenType);
+        AbstractTokenAuthenticator authenticator = authenticatorMap.get(grantType);
         if (authenticator == null) {
             throw new UnsupportedOperationException(
-                    String.format("Unsupported token type: %s. Registered types: %s",
-                            tokenType.getValue(),
+                    String.format("Unsupported grant type: %s. Registered types: %s",
+                            grantType.getValue(),
                             String.join(", ", authenticatorMap.keySet().stream()
-                                    .map(JwtTokenType::getValue)
+                                    .map(JwtGrantType::getValue)
                                     .toList()))
             );
         }
-        return authenticatorMap.get(tokenType);
+        return authenticatorMap.get(grantType);
     }
 }

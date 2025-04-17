@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.token.storage.caffeine;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
+import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.security.token.AbstractAccessTokenBlacklistManager;
 import io.github.tsukasahwan.jwt.support.CaffeineExpireValue;
 
@@ -22,10 +22,11 @@ public class CaffeineAccessTokenBlacklistManager extends AbstractAccessTokenBlac
     }
 
     @Override
-    public void addToBlacklist(String accessToken) {
-        GenericJwtToken genericJwtToken = validate(accessToken);
-        final String cacheKey = buildKey(genericJwtToken.getJti());
-        Duration ttl = Duration.between(Instant.now(), genericJwtToken.getExpiresAt());
+    public void addToBlacklist(JwtToken accessToken) {
+        this.validate(accessToken);
+
+        final String cacheKey = buildKey(accessToken.getId());
+        Duration ttl = Duration.between(Instant.now(), accessToken.getExpiresAt());
         CaffeineExpireValue<Object> expireValue = new CaffeineExpireValue<>();
         expireValue.setValue(1);
         expireValue.setTtl(ttl);
@@ -33,9 +34,10 @@ public class CaffeineAccessTokenBlacklistManager extends AbstractAccessTokenBlac
     }
 
     @Override
-    public boolean isBlacklisted(String accessToken) {
-        GenericJwtToken genericJwtToken = validate(accessToken);
-        final String cacheKey = buildKey(genericJwtToken.getJti());
+    public boolean isBlacklisted(JwtToken accessToken) {
+        this.validate(accessToken);
+
+        final String cacheKey = buildKey(accessToken.getId());
         Boolean hasKey = this.cache.getIfPresent(cacheKey) != null;
         return Boolean.TRUE.equals(hasKey);
     }

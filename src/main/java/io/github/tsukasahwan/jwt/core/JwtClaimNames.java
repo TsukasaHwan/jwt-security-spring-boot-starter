@@ -4,7 +4,7 @@ package io.github.tsukasahwan.jwt.core;
  * @author Teamo
  * @since 2025/4/6
  */
-public final class JwtClaimsNames {
+public final class JwtClaimNames {
 
     /**
      * {@code jti} - JWT ID声明为JWT提供唯一标识符

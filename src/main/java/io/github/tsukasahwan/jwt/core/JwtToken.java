@@ -1,22 +1,37 @@
 package io.github.tsukasahwan.jwt.core;
 
-import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.springframework.util.Assert;
+
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author Teamo
  * @since 2025/4/6
  */
-public class JwtToken {
+@JsonDeserialize(builder = JwtToken.Builder.class)
+public class JwtToken implements JwtClaimAccessor, Serializable {
 
     private final String tokenValue;
 
-    private final GenericJwtToken genericJwtToken;
+    private final JwtGrantType grantType;
 
-    public JwtToken(String tokenValue, GenericJwtToken genericJwtToken) {
+    private final Map<String, Object> claims;
+
+    public JwtToken(String tokenValue, JwtGrantType grantType, Map<String, Object> claims) {
         Assert.hasText(tokenValue, "tokenValue cannot be empty");
+        Assert.notNull(grantType, "grantType cannot be null");
+        Assert.notEmpty(claims, "claims cannot be empty");
         this.tokenValue = tokenValue;
-        this.genericJwtToken = genericJwtToken;
+        this.grantType = grantType;
+        this.claims = Collections.unmodifiableMap(new LinkedHashMap<>(claims));
     }
 
     public static Builder withTokenValue(String tokenValue) {
@@ -27,15 +42,20 @@ public class JwtToken {
         return tokenValue;
     }
 
-    public GenericJwtToken getGenericJwtToken() {
-        return genericJwtToken;
+    public JwtGrantType getGrantType() {
+        return grantType;
+    }
+
+    @Override
+    public Map<String, Object> getClaims() {
+        return claims;
     }
 
     public static class Builder {
 
         private String tokenValue;
 
-        private GenericJwtToken genericJwtToken;
+        private final Map<String, Object> claims = new LinkedHashMap<>();
 
         private Builder(String tokenValue) {
             this.tokenValue = tokenValue;
@@ -46,13 +66,50 @@ public class JwtToken {
             return this;
         }
 
-        public Builder genericJwtToken(GenericJwtToken genericJwtToken) {
-            this.genericJwtToken = genericJwtToken;
+        @JsonAnySetter
+        public Builder claim(String name, Object value) {
+            this.claims.put(name, value);
+            return this;
+        }
+
+        public Builder claims(Consumer<Map<String, Object>> claimsConsumer) {
+            claimsConsumer.accept(this.claims);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimNames.JTI)
+        public Builder jti(String jti) {
+            claim(JwtClaimNames.JTI, jti);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimNames.SUB)
+        public Builder subject(String subject) {
+            claim(JwtClaimNames.SUB, subject);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimNames.IAT)
+        public Builder issuedAt(Instant issuedAt) {
+            claim(JwtClaimNames.IAT, issuedAt);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimNames.EXP)
+        public Builder expiresAt(Instant expiresAt) {
+            claim(JwtClaimNames.EXP, expiresAt);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimNames.GRANT_TYPE)
+        public Builder grantType(JwtGrantType grantType) {
+            Assert.notNull(grantType, "grantType cannot be null");
+            claim(JwtClaimNames.GRANT_TYPE, grantType);
             return this;
         }
 
         public JwtToken build() {
-            return new JwtToken(tokenValue, this.genericJwtToken);
+            return new JwtToken(this.tokenValue, (JwtGrantType) this.claims.get(JwtClaimNames.GRANT_TYPE), this.claims);
         }
     }
 }
