@@ -523,7 +523,8 @@ jwt.security.refresh-token-expires-in: 7d # 刷新令牌7天
 A: 使用认证管理器的刷新方法：
 
 ```java
-Jwt newTokens = jwtAuthenticationManager.refresh(currentUser.getUsername(), refreshTokenValue);
+JwtToken refreshToken = JwtUtils.getJwtToken();
+Jwt newTokens = jwtAuthenticationManager.refresh(currentUser.getUsername(), refreshToken);
 ```
 
 ---
