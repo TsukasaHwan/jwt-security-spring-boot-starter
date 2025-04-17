@@ -1,11 +1,7 @@
 package io.github.tsukasahwan.jwt.core;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.springframework.util.Assert;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -16,8 +12,7 @@ import java.util.function.Consumer;
  * @author Teamo
  * @since 2025/4/6
  */
-@JsonDeserialize(builder = JwtToken.Builder.class)
-public class JwtToken implements JwtClaimAccessor, Serializable {
+public class JwtToken implements JwtClaimAccessor {
 
     private final String tokenValue;
 
@@ -66,7 +61,6 @@ public class JwtToken implements JwtClaimAccessor, Serializable {
             return this;
         }
 
-        @JsonAnySetter
         public Builder claim(String name, Object value) {
             this.claims.put(name, value);
             return this;
@@ -77,31 +71,26 @@ public class JwtToken implements JwtClaimAccessor, Serializable {
             return this;
         }
 
-        @JsonSetter(JwtClaimNames.JTI)
         public Builder jti(String jti) {
             claim(JwtClaimNames.JTI, jti);
             return this;
         }
 
-        @JsonSetter(JwtClaimNames.SUB)
         public Builder subject(String subject) {
             claim(JwtClaimNames.SUB, subject);
             return this;
         }
 
-        @JsonSetter(JwtClaimNames.IAT)
         public Builder issuedAt(Instant issuedAt) {
             claim(JwtClaimNames.IAT, issuedAt);
             return this;
         }
 
-        @JsonSetter(JwtClaimNames.EXP)
         public Builder expiresAt(Instant expiresAt) {
             claim(JwtClaimNames.EXP, expiresAt);
             return this;
         }
 
-        @JsonSetter(JwtClaimNames.GRANT_TYPE)
         public Builder grantType(JwtGrantType grantType) {
             Assert.notNull(grantType, "grantType cannot be null");
             claim(JwtClaimNames.GRANT_TYPE, grantType);

@@ -6,6 +6,7 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.github.tsukasahwan.jwt.config.properties.JwtSecurityProperties;
+import io.github.tsukasahwan.jwt.core.JwtClaimNames;
 import io.github.tsukasahwan.jwt.core.JwtClaimsSet;
 import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
@@ -108,8 +109,10 @@ public class JwtUtils {
 
         verify(jwsObject);
 
-        String payload = jwsObject.getPayload().toString();
-        JwtToken jwtToken = JsonUtil.fromJson(payload, JwtToken.class);
+        JwtToken jwtToken = JwtToken.withTokenValue(token)
+                .claims(c -> c.putAll(convert(jwsObject)))
+                .build();
+
         validateJwtToken(jwtToken);
 
         return jwtToken;
@@ -269,6 +272,20 @@ public class JwtUtils {
         return builder.build();
     }
 
+    private static Map<String, Object> convert(JWSObject jwsObject) {
+        Map<String, Object> claims = jwsObject.getPayload().toJSONObject();
+        if (claims.containsKey(JwtClaimNames.IAT)) {
+            claims.put(JwtClaimNames.IAT, Instant.ofEpochSecond((Long) claims.get(JwtClaimNames.IAT)));
+        }
+        if (claims.containsKey(JwtClaimNames.EXP)) {
+            claims.put(JwtClaimNames.EXP, Instant.ofEpochSecond((Long) claims.get(JwtClaimNames.EXP)));
+        }
+        if (claims.containsKey(JwtClaimNames.GRANT_TYPE)) {
+            claims.put(JwtClaimNames.GRANT_TYPE, JsonUtil.convertValue(claims.get(JwtClaimNames.GRANT_TYPE), JwtGrantType.class));
+        }
+        return claims;
+    }
+
     private static JWSObject parse(String token) {
         JWSObject jwsObject;
         try {
@@ -302,10 +319,6 @@ public class JwtUtils {
     }
 
     private static void validateJwtToken(JwtToken jwtToken) {
-        if (jwtToken == null) {
-            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
-                    "Failed to deserialize token claims"));
-        }
         if (jwtToken.getGrantType() == null) {
             throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
                     "Missing required claim: grant_type"));
