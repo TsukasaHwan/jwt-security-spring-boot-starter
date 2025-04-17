@@ -2,6 +2,7 @@ package io.github.tsukasahwan.jwt.security.authentication;
 
 import io.github.tsukasahwan.jwt.core.Jwt;
 import io.github.tsukasahwan.jwt.core.JwtClaimsSet;
+import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.security.token.AccessTokenBlacklistManager;
@@ -28,55 +29,55 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
     public Jwt login(String subject) {
         JwtToken refreshToken = JwtUtils.refreshToken(subject);
 
-        saveRefreshTokenIfEnabledRevoke(refreshToken);
+        this.saveRefreshTokenIfEnabledRevoke(refreshToken);
 
-        return create(JwtUtils.accessToken(subject), refreshToken);
+        return this.create(JwtUtils.accessToken(subject), refreshToken);
     }
 
     @Override
     public Jwt login(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims) {
-        validateClaims(accessClaims, refreshClaims);
+        this.validateClaims(accessClaims, refreshClaims);
 
         JwtToken refreshJwtToken = JwtUtils.token(refreshClaims);
 
-        saveRefreshTokenIfEnabledRevoke(refreshJwtToken);
+        this.saveRefreshTokenIfEnabledRevoke(refreshJwtToken);
 
-        return create(JwtUtils.token(accessClaims), refreshJwtToken);
+        return this.create(JwtUtils.token(accessClaims), refreshJwtToken);
     }
 
     @Override
     public Jwt refresh(String subject, JwtToken refreshToken) {
-        validateTokenSubject(subject, refreshToken);
+        this.validateTokenSubject(subject, refreshToken);
 
-        revokeRefreshTokenIfEnabled(refreshToken);
+        this.revokeRefreshTokenIfEnabled(refreshToken);
 
         JwtToken newRefreshJwtToken = JwtUtils.refreshToken(subject);
-        saveRefreshTokenIfEnabledRevoke(newRefreshJwtToken);
+        this.saveRefreshTokenIfEnabledRevoke(newRefreshJwtToken);
 
         JwtToken newAccessJwtToken = JwtUtils.accessToken(subject);
-        return create(newAccessJwtToken, newRefreshJwtToken);
+        return this.create(newAccessJwtToken, newRefreshJwtToken);
     }
 
     @Override
     public Jwt refresh(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims, JwtToken refreshToken) {
-        validateClaims(accessClaims, refreshClaims);
-        validateTokenSubject(accessClaims.getSubject(), refreshToken);
+        this.validateClaims(accessClaims, refreshClaims);
+        this.validateTokenSubject(accessClaims.getSubject(), refreshToken);
 
-        revokeRefreshTokenIfEnabled(refreshToken);
+        this.revokeRefreshTokenIfEnabled(refreshToken);
 
         JwtToken newRefreshToken = JwtUtils.token(refreshClaims);
-        saveRefreshTokenIfEnabledRevoke(newRefreshToken);
+        this.saveRefreshTokenIfEnabledRevoke(newRefreshToken);
 
         JwtToken newAccessToken = JwtUtils.token(accessClaims);
-        return create(newAccessToken, newRefreshToken);
+        return this.create(newAccessToken, newRefreshToken);
     }
 
     @Override
     public void logout(String subject, JwtToken accessToken) {
-        validateTokenSubject(subject, accessToken);
+        this.validateTokenSubject(subject, accessToken);
 
-        revokeAllRefreshTokenIfEnabled(subject);
-        addAccessTokenToBlacklistIfEnabled(accessToken);
+        this.revokeAllRefreshTokenIfEnabled(subject);
+        this.addAccessTokenToBlacklistIfEnabled(accessToken);
     }
 
     private void validateClaims(JwtClaimsSet accessClaims, JwtClaimsSet refreshClaims) {
@@ -86,6 +87,18 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
         if (refreshClaims == null) {
             throw new IllegalArgumentException("RefreshToken cannot be null");
         }
+
+        if (!accessClaims.getGrantType().equals(JwtGrantType.ACCESS_TOKEN)) {
+            throw new InvalidTokenException(String.format("Access token type mismatch (expected: %s, actual: %s)",
+                    JwtGrantType.ACCESS_TOKEN,
+                    accessClaims.getGrantType()));
+        }
+        if (!refreshClaims.getGrantType().equals(JwtGrantType.REFRESH_TOKEN)) {
+            throw new InvalidTokenException(String.format("Refresh token type mismatch (expected: %s, actual: %s)",
+                    JwtGrantType.REFRESH_TOKEN,
+                    refreshClaims.getGrantType()));
+        }
+
         String accessSubject = accessClaims.getSubject();
         String refreshSubject = refreshClaims.getSubject();
         if (!Objects.equals(accessSubject, refreshSubject)) {
