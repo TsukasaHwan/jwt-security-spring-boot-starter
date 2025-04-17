@@ -16,16 +16,12 @@ public class JwtToken implements JwtClaimAccessor {
 
     private final String tokenValue;
 
-    private final JwtGrantType grantType;
-
     private final Map<String, Object> claims;
 
-    public JwtToken(String tokenValue, JwtGrantType grantType, Map<String, Object> claims) {
+    public JwtToken(String tokenValue, Map<String, Object> claims) {
         Assert.hasText(tokenValue, "tokenValue cannot be empty");
-        Assert.notNull(grantType, "grantType cannot be null");
         Assert.notEmpty(claims, "claims cannot be empty");
         this.tokenValue = tokenValue;
-        this.grantType = grantType;
         this.claims = Collections.unmodifiableMap(new LinkedHashMap<>(claims));
     }
 
@@ -35,10 +31,6 @@ public class JwtToken implements JwtClaimAccessor {
 
     public String getTokenValue() {
         return tokenValue;
-    }
-
-    public JwtGrantType getGrantType() {
-        return grantType;
     }
 
     @Override
@@ -98,7 +90,7 @@ public class JwtToken implements JwtClaimAccessor {
         }
 
         public JwtToken build() {
-            return new JwtToken(this.tokenValue, (JwtGrantType) this.claims.get(JwtClaimNames.GRANT_TYPE), this.claims);
+            return new JwtToken(this.tokenValue, this.claims);
         }
     }
 }

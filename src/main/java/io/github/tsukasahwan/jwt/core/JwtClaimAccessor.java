@@ -26,4 +26,8 @@ public interface JwtClaimAccessor {
     default Instant getExpiresAt() {
         return (Instant) getClaims().get(JwtClaimNames.EXP);
     }
+
+    default JwtGrantType getGrantType() {
+        return (JwtGrantType) getClaims().get(JwtClaimNames.GRANT_TYPE);
+    }
 }
