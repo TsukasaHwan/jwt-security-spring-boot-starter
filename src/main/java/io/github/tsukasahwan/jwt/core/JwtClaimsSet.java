@@ -62,7 +62,7 @@ public class JwtClaimsSet implements JwtClaimAccessor {
 
         public Builder grantType(JwtGrantType grantType) {
             Assert.notNull(grantType, "grantType cannot be null");
-            return claim(JwtClaimNames.GRANT_TYPE, grantType.getValue());
+            return claim(JwtClaimNames.GRANT_TYPE, grantType);
         }
 
         public Builder claim(String name, Object value) {
