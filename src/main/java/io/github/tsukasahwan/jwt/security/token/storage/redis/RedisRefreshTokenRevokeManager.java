@@ -32,7 +32,7 @@ public class RedisRefreshTokenRevokeManager extends AbstractRefreshTokenRevokeMa
         final String cacheKey = buildKey(refreshToken);
 
         Duration expireTime = Duration.between(Instant.now(), refreshToken.getExpiresAt());
-        this.redisTemplate.opsForValue().set(cacheKey, refreshToken, expireTime);
+        this.redisTemplate.opsForValue().set(cacheKey, refreshToken.getTokenValue(), expireTime);
     }
 
     @Override
