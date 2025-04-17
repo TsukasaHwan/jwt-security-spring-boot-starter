@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.token.storage.redis;
 
+import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.security.token.AbstractAccessTokenBlacklistManager;
-import io.jsonwebtoken.Claims;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
@@ -22,16 +22,16 @@ public class RedisAccessTokenBlacklistManager extends AbstractAccessTokenBlackli
 
     @Override
     public void addToBlacklist(String accessToken) {
-        Claims payload = validate(accessToken);
-        final String cacheKey = buildKey(payload.getId());
-        Duration ttl = Duration.between(Instant.now(), payload.getExpiration().toInstant());
+        GenericJwtToken genericJwtToken = validate(accessToken);
+        final String cacheKey = buildKey(genericJwtToken.getJti());
+        Duration ttl = Duration.between(Instant.now(), genericJwtToken.getExpiresAt());
         this.redisTemplate.opsForValue().set(cacheKey, 1, ttl);
     }
 
     @Override
     public boolean isBlacklisted(String accessToken) {
-        Claims payload = validate(accessToken);
-        final String cacheKey = buildKey(payload.getId());
+        GenericJwtToken genericJwtToken = validate(accessToken);
+        final String cacheKey = buildKey(genericJwtToken.getJti());
         Boolean hasKey = this.redisTemplate.hasKey(cacheKey);
         return Boolean.TRUE.equals(hasKey);
     }

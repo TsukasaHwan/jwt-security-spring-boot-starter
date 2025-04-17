@@ -2,9 +2,9 @@ package io.github.tsukasahwan.jwt.security.token;
 
 import io.github.tsukasahwan.jwt.core.JwtToken;
 import io.github.tsukasahwan.jwt.core.JwtTokenType;
+import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.util.JwtUtils;
-import io.jsonwebtoken.Claims;
 
 /**
  * @author Teamo
@@ -18,23 +18,23 @@ public abstract class AbstractRefreshTokenRevokeManager implements RefreshTokenR
         this.keyPrefix = keyPrefix;
     }
 
-    protected String buildKey(Claims payload) {
-        return this.keyPrefix + payload.getSubject() + ":" + payload.getId();
+    protected String buildKey(GenericJwtToken genericJwtToken) {
+        return this.keyPrefix + genericJwtToken.getSubject() + ":" + genericJwtToken.getJti();
     }
 
-    protected Claims validate(String refreshToken) {
+    protected GenericJwtToken validate(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new InvalidTokenException("Refresh Token cannot be empty");
         }
         JwtToken jwtToken = JwtUtils.parseToken(refreshToken);
-        if (!JwtTokenType.REFRESH_TOKEN.equals(jwtToken.getTokenType())) {
-            throw new InvalidTokenException("Token must be a refresh token. Actual type: " + jwtToken.getTokenType().getValue());
+        GenericJwtToken genericJwtToken = jwtToken.getGenericJwtToken();
+        if (!JwtTokenType.REFRESH_TOKEN.equals(genericJwtToken.getTokenType())) {
+            throw new InvalidTokenException("Token must be a refresh token. Actual type: " + genericJwtToken.getTokenType().getValue());
         }
-        Claims payload = jwtToken.getJws().getPayload();
-        if (payload.getId() == null || payload.getId().isBlank()) {
+        if (genericJwtToken.getJti() == null || genericJwtToken.getJti().isBlank()) {
             throw new InvalidTokenException("Refresh token must contain jti claim. Token: " + refreshToken);
         }
-        return payload;
+        return genericJwtToken;
     }
 
     public String getKeyPrefix() {

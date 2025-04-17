@@ -1,7 +1,7 @@
 package io.github.tsukasahwan.jwt.security.token.storage.redis;
 
+import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.security.token.AbstractRefreshTokenRevokeManager;
-import io.jsonwebtoken.Claims;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -28,24 +28,24 @@ public class RedisRefreshTokenRevokeManager extends AbstractRefreshTokenRevokeMa
 
     @Override
     public void save(String refreshToken) {
-        Claims payload = validate(refreshToken);
-        final String cacheKey = buildKey(payload);
-        Duration expireTime = Duration.between(Instant.now(), payload.getExpiration().toInstant());
+        GenericJwtToken genericJwtToken = validate(refreshToken);
+        final String cacheKey = buildKey(genericJwtToken);
+        Duration expireTime = Duration.between(Instant.now(), genericJwtToken.getExpiresAt());
         this.redisTemplate.opsForValue().set(cacheKey, refreshToken, expireTime);
     }
 
     @Override
     public boolean isRevoked(String refreshToken) {
-        Claims payload = validate(refreshToken);
-        final String cacheKey = buildKey(payload);
+        GenericJwtToken genericJwtToken = validate(refreshToken);
+        final String cacheKey = buildKey(genericJwtToken);
         Boolean hasKey = this.redisTemplate.hasKey(cacheKey);
         return Boolean.FALSE.equals(hasKey);
     }
 
     @Override
     public void revoke(String refreshToken) {
-        Claims payload = validate(refreshToken);
-        final String cacheKey = buildKey(payload);
+        GenericJwtToken genericJwtToken = validate(refreshToken);
+        final String cacheKey = buildKey(genericJwtToken);
         this.redisTemplate.delete(cacheKey);
     }
 

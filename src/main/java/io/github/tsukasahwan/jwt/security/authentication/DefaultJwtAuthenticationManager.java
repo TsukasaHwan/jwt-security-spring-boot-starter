@@ -1,18 +1,15 @@
 package io.github.tsukasahwan.jwt.security.authentication;
 
 import io.github.tsukasahwan.jwt.core.Jwt;
-import io.github.tsukasahwan.jwt.core.JwtClaimsNames;
-import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.core.token.AccessToken;
+import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.core.token.RefreshToken;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.security.token.AccessTokenBlacklistManager;
 import io.github.tsukasahwan.jwt.security.token.RefreshTokenRevokeManager;
-import io.github.tsukasahwan.jwt.util.JsonUtil;
 import io.github.tsukasahwan.jwt.util.JwtUtils;
-import io.jsonwebtoken.Claims;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -126,11 +123,10 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
         if (tokenValue == null) {
             throw new IllegalArgumentException("Token value cannot be null");
         }
-        Claims claims = JwtUtils.parseToken(tokenValue).getJws().getPayload();
-        String tokenSubject = claims.getSubject();
+        GenericJwtToken genericJwtToken = JwtUtils.parseToken(tokenValue).getGenericJwtToken();
+        String tokenSubject = genericJwtToken.getSubject();
         if (!Objects.equals(subject, tokenSubject)) {
-            String tokenType = claims.containsKey(JwtClaimsNames.GRANT_TYPE) ?
-                    JsonUtil.convertValue(claims.get(JwtClaimsNames.GRANT_TYPE), JwtTokenType.class).getValue() : "UNKNOWN";
+            String tokenType = genericJwtToken.getTokenType().getValue();
             String message = String.format(
                     "Subject mismatch (Provided: %s, Token subject: %s, Token type: '%s')",
                     subject,
@@ -149,14 +145,13 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
      * @return {@link Jwt}
      */
     private Jwt create(String accessToken, String refreshToken) {
-        Date expiration = JwtUtils.parseToken(accessToken)
-                .getJws()
-                .getPayload()
-                .getExpiration();
+        Instant expiresAt = JwtUtils.parseToken(accessToken)
+                .getGenericJwtToken()
+                .getExpiresAt();
         return Jwt.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .expiresIn(expiration == null ? null : expiration.getTime())
+                .expiresIn(expiresAt.toEpochMilli())
                 .build();
     }
 

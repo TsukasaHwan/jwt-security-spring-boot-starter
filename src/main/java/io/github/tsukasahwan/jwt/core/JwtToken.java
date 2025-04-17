@@ -1,8 +1,6 @@
 package io.github.tsukasahwan.jwt.core;
 
-import io.github.tsukasahwan.jwt.util.JsonUtil;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
+import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import org.springframework.util.Assert;
 
 /**
@@ -13,15 +11,12 @@ public class JwtToken {
 
     private final String tokenValue;
 
-    private final Jws<Claims> jws;
+    private final GenericJwtToken genericJwtToken;
 
-    private final JwtTokenType tokenType;
-
-    public JwtToken(String tokenValue, Jws<Claims> jws, JwtTokenType tokenType) {
+    public JwtToken(String tokenValue, GenericJwtToken genericJwtToken) {
         Assert.hasText(tokenValue, "tokenValue cannot be empty");
         this.tokenValue = tokenValue;
-        this.jws = jws;
-        this.tokenType = tokenType;
+        this.genericJwtToken = genericJwtToken;
     }
 
     public static Builder withTokenValue(String tokenValue) {
@@ -32,21 +27,15 @@ public class JwtToken {
         return tokenValue;
     }
 
-    public Jws<Claims> getJws() {
-        return jws;
-    }
-
-    public JwtTokenType getTokenType() {
-        return tokenType;
+    public GenericJwtToken getGenericJwtToken() {
+        return genericJwtToken;
     }
 
     public static class Builder {
 
         private String tokenValue;
 
-        private Jws<Claims> jws;
-
-        private JwtTokenType tokenType;
+        private GenericJwtToken genericJwtToken;
 
         private Builder(String tokenValue) {
             this.tokenValue = tokenValue;
@@ -57,25 +46,13 @@ public class JwtToken {
             return this;
         }
 
-        public Builder jws(Jws<Claims> jws) {
-            this.jws = jws;
-            return this;
-        }
-
-        public Builder tokenType(JwtTokenType tokenType) {
-            this.tokenType = tokenType;
+        public Builder genericJwtToken(GenericJwtToken genericJwtToken) {
+            this.genericJwtToken = genericJwtToken;
             return this;
         }
 
         public JwtToken build() {
-            if (jws != null) {
-                tokenType = getTokenType(jws.getPayload().get(JwtClaimsNames.GRANT_TYPE));
-            }
-            return new JwtToken(tokenValue, jws, tokenType);
-        }
-
-        private JwtTokenType getTokenType(Object jwtTokenType) {
-            return jwtTokenType == null ? null : JsonUtil.convertValue(jwtTokenType, JwtTokenType.class);
+            return new JwtToken(tokenValue, this.genericJwtToken);
         }
     }
 }

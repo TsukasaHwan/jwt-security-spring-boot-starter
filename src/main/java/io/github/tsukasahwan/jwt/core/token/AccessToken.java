@@ -3,7 +3,6 @@ package io.github.tsukasahwan.jwt.core.token;
 import io.github.tsukasahwan.jwt.core.AbstractToken;
 import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.util.IdUtils;
-import io.jsonwebtoken.Claims;
 
 import java.util.Map;
 
@@ -13,8 +12,8 @@ import java.util.Map;
  */
 public class AccessToken extends AbstractToken {
 
-    protected AccessToken(String id, String subject, Map<String, Object> header, Map<String, Object> claims) {
-        super(id, subject, header, claims);
+    protected AccessToken(Map<String, Object> claims) {
+        super(claims);
     }
 
     public static AccessTokenBuilder builder() {
@@ -25,15 +24,13 @@ public class AccessToken extends AbstractToken {
 
         AccessTokenBuilder() {
             super(JwtTokenType.ACCESS_TOKEN);
-            super.id(IdUtils.simpleUUID());
+            super.jti(IdUtils.simpleUUID());
         }
 
         @Override
         public AccessToken build() {
             validate();
-            String id = this.claims.get(Claims.ID) == null ? null : this.claims.get(Claims.ID).toString();
-            String subject = this.claims.get(Claims.SUBJECT).toString();
-            return new AccessToken(id, subject, this.header, this.claims);
+            return new AccessToken(this.claims);
         }
     }
 

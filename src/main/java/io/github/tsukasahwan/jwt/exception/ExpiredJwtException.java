@@ -6,13 +6,13 @@ import org.springframework.security.core.AuthenticationException;
  * @author Teamo
  * @since 2023/3/16
  */
-public class ExpiredJwtAuthenticationException extends AuthenticationException {
+public class ExpiredJwtException extends AuthenticationException {
 
-    public ExpiredJwtAuthenticationException(String msg, Throwable cause) {
+    public ExpiredJwtException(String msg, Throwable cause) {
         super(msg, cause);
     }
 
-    public ExpiredJwtAuthenticationException(String msg) {
+    public ExpiredJwtException(String msg) {
         super(msg);
     }
 }

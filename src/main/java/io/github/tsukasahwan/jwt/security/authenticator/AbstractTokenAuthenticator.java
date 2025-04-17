@@ -102,7 +102,7 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
 
     protected Authentication doAuthenticate(HttpServletRequest request, JwtToken jwtToken) {
         String authToken = jwtToken.getTokenValue();
-        String username = jwtToken.getJws().getPayload().getSubject();
+        String username = jwtToken.getGenericJwtToken().getSubject();
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if (username != null && securityContext.getAuthentication() == null) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);

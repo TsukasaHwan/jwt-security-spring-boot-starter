@@ -1,5 +1,10 @@
 package io.github.tsukasahwan.jwt.util;
 
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import io.github.tsukasahwan.jwt.config.properties.JwtSecurityProperties;
 import io.github.tsukasahwan.jwt.core.AbstractToken;
 import io.github.tsukasahwan.jwt.core.JwtClaimsNames;
@@ -8,19 +13,17 @@ import io.github.tsukasahwan.jwt.core.JwtTokenType;
 import io.github.tsukasahwan.jwt.core.token.AccessToken;
 import io.github.tsukasahwan.jwt.core.token.GenericJwtToken;
 import io.github.tsukasahwan.jwt.core.token.RefreshToken;
+import io.github.tsukasahwan.jwt.exception.ExpiredJwtException;
+import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.filter.JwtAuthenticationFilter;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.jackson.io.JacksonDeserializer;
-import io.jsonwebtoken.jackson.io.JacksonSerializer;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
-import java.time.Duration;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,6 +33,14 @@ import java.util.Map;
 public class JwtUtils {
 
     private static final char TOKEN_CONNECTOR_CHAT = ' ';
+
+    private static final String DECODING_ERROR_MESSAGE_TEMPLATE = "An error occurred while attempting to decode the Jwt: %s";
+
+    private static final String ENCODING_ERROR_MESSAGE_TEMPLATE = "An error occurred while attempting to encode the Jwt: %s";
+
+    private static final JWSHeader DEFAULT_JWS_HEADER = new JWSHeader.Builder(JWSAlgorithm.RS256)
+            .type(JOSEObjectType.JWT)
+            .build();
 
     private static JwtSecurityProperties properties;
 
@@ -45,8 +56,11 @@ public class JwtUtils {
      */
     public static String accessToken(String subject) {
         Assert.hasText(subject, "'subject' must not be empty");
+        Instant now = Instant.now();
         AccessToken accessToken = AccessToken.builder()
                 .subject(subject)
+                .issuedAt(now)
+                .expiresAt(now.plus(properties.getExpiresIn()))
                 .build();
         return accessToken(accessToken);
     }
@@ -58,7 +72,7 @@ public class JwtUtils {
      * @return 访问令牌
      */
     public static String accessToken(AccessToken accessToken) {
-        return token(accessToken, properties.getExpiresIn());
+        return serialize(accessToken);
     }
 
     /**
@@ -69,8 +83,11 @@ public class JwtUtils {
      */
     public static String refreshToken(String subject) {
         Assert.hasText(subject, "'subject' must not be empty");
+        Instant now = Instant.now();
         RefreshToken refreshToken = RefreshToken.builder()
                 .subject(subject)
+                .issuedAt(now)
+                .expiresAt(now.plus(properties.getRefreshTokenExpiresIn()))
                 .build();
         return refreshToken(refreshToken);
     }
@@ -82,24 +99,17 @@ public class JwtUtils {
      * @return 刷新令牌
      */
     public static String refreshToken(RefreshToken refreshToken) {
-        return token(refreshToken, properties.getRefreshTokenExpiresIn());
+        return serialize(refreshToken);
     }
 
     /**
      * 生成自定义令牌
-     * 如果为刷新令牌则使用刷新令牌配置的过期时间，否则使用令牌配置的过期时间
      *
      * @param genericJwtToken {@link GenericJwtToken}
      * @return 令牌
      */
-    public static String token(GenericJwtToken genericJwtToken) {
-        Assert.notNull(genericJwtToken, "'token' must not be null");
-        Map<String, Object> claims = genericJwtToken.getClaims();
-        JwtTokenType tokenType = (JwtTokenType) claims.get(JwtClaimsNames.GRANT_TYPE);
-        if (JwtTokenType.REFRESH_TOKEN.equals(tokenType)) {
-            return token(genericJwtToken, properties.getRefreshTokenExpiresIn());
-        }
-        return token(genericJwtToken, properties.getExpiresIn());
+    public static String genericToken(GenericJwtToken genericJwtToken) {
+        return serialize(genericJwtToken);
     }
 
     /**
@@ -110,15 +120,17 @@ public class JwtUtils {
      */
     public static JwtToken parseToken(String token) {
         Assert.hasText(token, "'token' must not be empty");
-        Jws<Claims> jws = Jwts.parser()
-                .json(new JacksonDeserializer<>())
-                .verifyWith(properties.getSecret().getPublicKey())
-                .clockSkewSeconds(properties.getAllowedClockSkew().getSeconds())
-                .build()
-                .parseSignedClaims(token);
+
+        JWSObject jwsObject = parse(token);
+
+        verify(jwsObject);
+
+        String payload = jwsObject.getPayload().toString();
+        GenericJwtToken genericJwtToken = JsonUtil.fromJson(payload, GenericJwtToken.class);
+        validateJwtToken(genericJwtToken);
 
         return JwtToken.withTokenValue(token)
-                .jws(jws)
+                .genericJwtToken(genericJwtToken)
                 .build();
     }
 
@@ -200,8 +212,8 @@ public class JwtUtils {
     public static <T> T getTokenClaimValue(String name, Class<T> claimType) {
         Assert.notNull(name, "Name must not be null");
         Assert.notNull(claimType, "Claim type must not be null");
-        Claims currentClaims = getJwtToken().getJws().getPayload();
-        return JsonUtil.convertValue(currentClaims.get(name), claimType);
+        Map<String, Object> claims = getJwtToken().getGenericJwtToken().getClaims();
+        return JsonUtil.convertValue(claims.get(name), claimType);
     }
 
     /**
@@ -224,30 +236,115 @@ public class JwtUtils {
 
     // -----------------------PRIVATE STATIC METHOD-----------------------
 
-    /**
-     * 生成令牌
-     *
-     * @param token     {@link AbstractToken}
-     * @param expiresIn 过期时间
-     * @return 令牌
-     */
-    private static String token(AbstractToken token, Duration expiresIn) {
+    private static String serialize(AbstractToken token) {
         Assert.notNull(token, "'token' must not be null");
-        Instant now = Instant.now();
-        JwtBuilder jwtBuilder = Jwts.builder()
-                .json(new JacksonSerializer<>())
-                .header()
-                .add(token.getHeader())
-                .and()
-                .claims(token.getClaims())
-                .issuedAt(Date.from(now))
-                .signWith(properties.getSecret().getPrivateKey());
+        checkExpiration(token);
+        JWTClaimsSet jwtClaimsSet = convert(token);
 
-        if (expiresIn != null) {
-            jwtBuilder.expiration(Date.from(now.plus(expiresIn)));
+        SignedJWT signedJwt = new SignedJWT(DEFAULT_JWS_HEADER, jwtClaimsSet);
+        JWSSigner jwsSigner = new RSASSASigner(properties.getSecret().getPrivateKey());
+        try {
+            signedJwt.sign(jwsSigner);
+        } catch (JOSEException e) {
+            throw new InvalidTokenException(String.format(ENCODING_ERROR_MESSAGE_TEMPLATE,
+                    "Failed to sign the JWT -> " + e.getMessage()), e);
+        }
+        return signedJwt.serialize();
+    }
+
+    private static void checkExpiration(AbstractToken token) {
+        if (token.getExpiresAt() != null) {
+            return;
+        }
+        JwtTokenType tokenType = token.getTokenType();
+        if (JwtTokenType.ACCESS_TOKEN.equals(tokenType)) {
+            token.getClaims().put(JwtClaimsNames.EXP, Instant.now().plus(properties.getExpiresIn()));
+        } else if (JwtTokenType.REFRESH_TOKEN.equals(tokenType)) {
+            token.getClaims().put(JwtClaimsNames.EXP, Instant.now().plus(properties.getRefreshTokenExpiresIn()));
+        }
+    }
+
+    private static JWTClaimsSet convert(AbstractToken token) {
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
+
+        String subject = token.getSubject();
+        if (StringUtils.hasText(subject)) {
+            builder.subject(subject);
         }
 
-        return jwtBuilder.compact();
+        Instant expiresAt = token.getExpiresAt();
+        if (expiresAt != null) {
+            builder.expirationTime(Date.from(expiresAt));
+        }
+
+        Instant issuedAt = token.getIssuedAt();
+        if (issuedAt != null) {
+            builder.issueTime(Date.from(issuedAt));
+        }
+
+        String jwtId = token.getJti();
+        if (StringUtils.hasText(jwtId)) {
+            builder.jwtID(jwtId);
+        }
+
+        Map<String, Object> customClaims = new HashMap<>();
+        token.getClaims().forEach((name, value) -> {
+            if (!JWTClaimsSet.getRegisteredNames().contains(name)) {
+                customClaims.put(name, value);
+            }
+        });
+        if (!customClaims.isEmpty()) {
+            customClaims.forEach(builder::claim);
+        }
+
+        return builder.build();
+    }
+
+    private static JWSObject parse(String token) {
+        JWSObject jwsObject;
+        try {
+            jwsObject = JWSObject.parse(token);
+        } catch (Exception e) {
+            if (e instanceof ParseException) {
+                throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                        "Malformed token"), e);
+            }
+            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                    e.getMessage()), e);
+        }
+        return jwsObject;
+    }
+
+    private static void verify(JWSObject jwsObject) {
+        JWSVerifier jwsVerifier = new RSASSAVerifier(properties.getSecret().getPublicKey());
+
+        boolean verify;
+        try {
+            verify = jwsObject.verify(jwsVerifier);
+        } catch (JOSEException | IllegalStateException e) {
+            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                    e.getMessage()), e);
+        }
+
+        if (!verify) {
+            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                    "Invalid JWT signature"));
+        }
+    }
+
+    private static void validateJwtToken(GenericJwtToken genericJwtToken) {
+        if (genericJwtToken == null) {
+            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                    "Failed to deserialize token claims"));
+        }
+        if (genericJwtToken.getTokenType() == null) {
+            throw new InvalidTokenException(String.format(DECODING_ERROR_MESSAGE_TEMPLATE,
+                    "Missing required claim: tokenType"));
+        }
+        Instant expiresAt = genericJwtToken.getExpiresAt();
+        if (expiresAt != null && expiresAt.isBefore(Instant.now())) {
+            throw new ExpiredJwtException("JWT expired at: " + expiresAt);
+        }
     }
 
 }

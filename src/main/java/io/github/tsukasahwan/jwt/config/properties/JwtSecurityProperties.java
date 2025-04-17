@@ -36,12 +36,6 @@ public class JwtSecurityProperties {
     private Duration expiresIn = Duration.ofMinutes(30L);
 
     /**
-     * 当生成Token的服务器与解析Token的服务器存在合理时钟漂移时，过期检查可能会失败
-     * 此字段允许设置时钟差异的容忍时间（建议1-2分钟，默认为0秒）
-     */
-    private Duration allowedClockSkew = Duration.ofSeconds(0L);
-
-    /**
      * RefreshToken过期时间（默认15天）
      */
     private Duration refreshTokenExpiresIn = Duration.ofDays(15L);
@@ -244,14 +238,6 @@ public class JwtSecurityProperties {
 
     public void setExpiresIn(Duration expiresIn) {
         this.expiresIn = expiresIn;
-    }
-
-    public Duration getAllowedClockSkew() {
-        return allowedClockSkew;
-    }
-
-    public void setAllowedClockSkew(Duration allowedClockSkew) {
-        this.allowedClockSkew = allowedClockSkew;
     }
 
     public Duration getRefreshTokenExpiresIn() {

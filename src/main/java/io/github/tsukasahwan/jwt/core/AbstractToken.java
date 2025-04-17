@@ -1,9 +1,12 @@
 package io.github.tsukasahwan.jwt.core;
 
-import io.jsonwebtoken.Claims;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
 
-import java.util.HashMap;
+import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author Teamo
@@ -11,72 +14,86 @@ import java.util.Map;
  */
 public abstract class AbstractToken {
 
-    private final String id;
-
-    private final String subject;
-
-    private final Map<String, Object> header;
-
     private final Map<String, Object> claims;
 
-    protected AbstractToken(String id, String subject, Map<String, Object> header, Map<String, Object> claims) {
-        this.id = id;
-        this.subject = subject;
-        this.header = header;
+    protected AbstractToken(Map<String, Object> claims) {
         this.claims = claims;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public Map<String, Object> getHeader() {
-        return header;
     }
 
     public Map<String, Object> getClaims() {
         return claims;
     }
 
+    public String getJti() {
+        return (String) claims.get(JwtClaimsNames.JTI);
+    }
+
+    public String getSubject() {
+        return (String) claims.get(JwtClaimsNames.SUB);
+    }
+
+    public Instant getIssuedAt() {
+        return (Instant) claims.get(JwtClaimsNames.IAT);
+    }
+
+    public Instant getExpiresAt() {
+        return (Instant) claims.get(JwtClaimsNames.EXP);
+    }
+
+    public JwtTokenType getTokenType() {
+        return (JwtTokenType) claims.get(JwtClaimsNames.GRANT_TYPE);
+    }
+
     public abstract static class Builder<T extends AbstractToken> {
 
         protected final JwtTokenType tokenType;
 
-        protected final Map<String, Object> header = new HashMap<>(16);
-
-        protected final Map<String, Object> claims = new HashMap<>(16);
+        protected final Map<String, Object> claims = new LinkedHashMap<>();
 
         protected Builder(JwtTokenType tokenType) {
             this.tokenType = tokenType;
             this.claims.put(JwtClaimsNames.GRANT_TYPE, tokenType);
         }
 
-        public Builder<T> id(String id) {
-            claims.put(Claims.ID, id);
+        @JsonAnySetter
+        public Builder<T> claim(String name, Object value) {
+            this.claims.put(name, value);
             return this;
         }
 
-        public Builder<T> subject(String sub) {
-            claims.put(Claims.SUBJECT, sub);
+        public Builder<T> claims(Consumer<Map<String, Object>> claimsConsumer) {
+            claimsConsumer.accept(this.claims);
             return this;
         }
 
-        public HeaderBuilder header() {
-            return new HeaderBuilder(this, header);
+        @JsonSetter(JwtClaimsNames.JTI)
+        public Builder<T> jti(String jti) {
+            claims.put(JwtClaimsNames.JTI, jti);
+            return this;
         }
 
-        public ClaimsBuilder claims() {
-            return new ClaimsBuilder(this, claims);
+        @JsonSetter(JwtClaimsNames.SUB)
+        public Builder<T> subject(String subject) {
+            claims.put(JwtClaimsNames.SUB, subject);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimsNames.IAT)
+        public Builder<T> issuedAt(Instant issuedAt) {
+            claims.put(JwtClaimsNames.IAT, issuedAt);
+            return this;
+        }
+
+        @JsonSetter(JwtClaimsNames.EXP)
+        public Builder<T> expiresAt(Instant expiresAt) {
+            claims.put(JwtClaimsNames.EXP, expiresAt);
+            return this;
         }
 
         public abstract T build();
 
         protected void validate() {
-            Object sub = claims.get(Claims.SUBJECT);
+            Object sub = claims.get(JwtClaimsNames.SUB);
             if (sub == null || sub.toString().isBlank()) {
                 throw new IllegalStateException("subject must not be null or blank");
             }
@@ -84,58 +101,6 @@ public abstract class AbstractToken {
             if (!tokenType.equals(actualType)) {
                 throw new IllegalStateException("Invalid token type. Expected: " + tokenType);
             }
-        }
-    }
-
-    public static class HeaderBuilder {
-
-        private final Builder<?> builder;
-
-        private final Map<String, Object> header;
-
-        HeaderBuilder(Builder<?> builder, Map<String, Object> header) {
-            this.builder = builder;
-            this.header = header;
-        }
-
-        public HeaderBuilder add(String name, Object value) {
-            this.header.put(name, value);
-            return this;
-        }
-
-        public HeaderBuilder add(Map<String, Object> header) {
-            this.header.putAll(header);
-            return this;
-        }
-
-        public Builder<?> and() {
-            return builder;
-        }
-    }
-
-    public static class ClaimsBuilder {
-
-        private final Builder<?> builder;
-
-        private final Map<String, Object> claims;
-
-        ClaimsBuilder(Builder<?> builder, Map<String, Object> claims) {
-            this.builder = builder;
-            this.claims = claims;
-        }
-
-        public ClaimsBuilder add(String name, Object value) {
-            this.claims.put(name, value);
-            return this;
-        }
-
-        public ClaimsBuilder add(Map<String, Object> claims) {
-            this.claims.putAll(claims);
-            return this;
-        }
-
-        public Builder<?> and() {
-            return builder;
         }
     }
 }

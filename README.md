@@ -179,7 +179,7 @@ public class SecurityDemoApplication {
            } else if (authException instanceof RefreshTokenRevokedException) {
                // 刷新令牌已撤销
                WebUtils.renderJson(response, Result.of(HttpServletResponse.SC_UNAUTHORIZED, "刷新令牌已撤销"));
-           } else if (authException instanceof ExpiredJwtAuthenticationException) {
+           } else if (authException instanceof ExpiredJwtException) {
                // 令牌已过期
                WebUtils.renderJson(response, Result.of(HttpServletResponse.SC_UNAUTHORIZED, "token已过期，请重新登录"));
            } else {
@@ -465,8 +465,6 @@ sequenceDiagram 客户端->>认证服务器: 发送刷新请求（携带Refresh 
    ```yaml
    jwt:
      security:
-       # 允许1分钟时钟偏差
-       allowed-clock-skew: 1m
        token-security:
          enabled: true
          storage-type: redis
