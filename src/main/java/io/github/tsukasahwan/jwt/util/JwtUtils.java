@@ -90,9 +90,10 @@ public class JwtUtils {
      * @return 令牌
      */
     public static JwtToken token(JwtClaimsSet claims) {
-        String tokenValue = serialize(claims);
+        JwtClaimsSet checkedClaims = check(claims);
+        String tokenValue = serialize(checkedClaims);
         return JwtToken.withTokenValue(tokenValue)
-                .claims(c -> c.putAll(claims.getClaims()))
+                .claims(c -> c.putAll(checkedClaims.getClaims()))
                 .build();
     }
 
@@ -222,8 +223,7 @@ public class JwtUtils {
 
     private static String serialize(JwtClaimsSet claims) {
         Assert.notNull(claims, "claims must not be null");
-        JwtClaimsSet checkedClaims = check(claims);
-        JWTClaimsSet jwtClaimsSet = convert(checkedClaims);
+        JWTClaimsSet jwtClaimsSet = convert(claims);
 
         SignedJWT signedJwt = new SignedJWT(DEFAULT_JWS_HEADER, jwtClaimsSet);
         JWSSigner jwsSigner = new RSASSASigner(properties.getSecret().getPrivateKey());
