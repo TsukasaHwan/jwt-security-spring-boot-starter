@@ -24,6 +24,9 @@ public abstract class AbstractRefreshTokenRevokeManager implements RefreshTokenR
         if (jwtToken == null || jwtToken.getTokenValue().isBlank()) {
             throw new InvalidTokenException("Refresh Token cannot be empty");
         }
+        if (jwtToken.getSubject() == null || jwtToken.getSubject().isBlank()) {
+            throw new InvalidTokenException("Refresh token must contain subject claim. Token: " + jwtToken.getTokenValue());
+        }
         if (!JwtGrantType.REFRESH_TOKEN.equals(jwtToken.getGrantType())) {
             throw new InvalidTokenException("Token must be a refresh token. Actual type: " + jwtToken.getGrantType().getValue());
         }

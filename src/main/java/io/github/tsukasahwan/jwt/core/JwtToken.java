@@ -64,29 +64,24 @@ public class JwtToken implements JwtClaimAccessor {
         }
 
         public Builder jti(String jti) {
-            claim(JwtClaimNames.JTI, jti);
-            return this;
+            return claim(JwtClaimNames.JTI, jti);
         }
 
         public Builder subject(String subject) {
-            claim(JwtClaimNames.SUB, subject);
-            return this;
+            return claim(JwtClaimNames.SUB, subject);
         }
 
         public Builder issuedAt(Instant issuedAt) {
-            claim(JwtClaimNames.IAT, issuedAt);
-            return this;
+            return claim(JwtClaimNames.IAT, issuedAt);
         }
 
         public Builder expiresAt(Instant expiresAt) {
-            claim(JwtClaimNames.EXP, expiresAt);
-            return this;
+            return claim(JwtClaimNames.EXP, expiresAt);
         }
 
         public Builder grantType(JwtGrantType grantType) {
             Assert.notNull(grantType, "grantType cannot be null");
-            claim(JwtClaimNames.GRANT_TYPE, grantType);
-            return this;
+            return claim(JwtClaimNames.GRANT_TYPE, grantType);
         }
 
         public JwtToken build() {

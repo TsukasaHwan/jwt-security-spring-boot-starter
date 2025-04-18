@@ -24,8 +24,8 @@ public class JwtClaimsSet implements JwtClaimAccessor {
         return this.claims;
     }
 
-    public static Builder builder() {
-        return new Builder();
+    public static Builder withGrantType(JwtGrantType grantType) {
+        return new Builder(grantType);
     }
 
     public static Builder from(JwtClaimsSet claims) {
@@ -36,7 +36,8 @@ public class JwtClaimsSet implements JwtClaimAccessor {
 
         private final Map<String, Object> claims = new HashMap<>();
 
-        private Builder() {
+        private Builder(JwtGrantType grantType) {
+            grantType(grantType);
         }
 
         private Builder(JwtClaimsSet claims) {
@@ -79,7 +80,6 @@ public class JwtClaimsSet implements JwtClaimAccessor {
 
         public JwtClaimsSet build() {
             Assert.notEmpty(this.claims, "claims cannot be empty");
-            Assert.notNull(this.claims.get(JwtClaimNames.GRANT_TYPE), "grantType cannot be null");
             return new JwtClaimsSet(this.claims);
         }
 

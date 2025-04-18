@@ -24,6 +24,9 @@ public abstract class AbstractAccessTokenBlacklistManager implements AccessToken
         if (jwtToken == null || jwtToken.getTokenValue().isBlank()) {
             throw new InvalidTokenException("Access Token cannot be empty");
         }
+        if (jwtToken.getSubject() == null || jwtToken.getSubject().isBlank()) {
+            throw new InvalidTokenException("Access token must contain subject claim. Token: " + jwtToken.getTokenValue());
+        }
         if (!JwtGrantType.ACCESS_TOKEN.equals(jwtToken.getGrantType())) {
             throw new InvalidTokenException("Token must be an access token. Actual type: " + jwtToken.getGrantType().getValue());
         }

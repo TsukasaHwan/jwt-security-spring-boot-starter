@@ -9,8 +9,6 @@ import io.github.tsukasahwan.jwt.security.token.AccessTokenBlacklistManager;
 import io.github.tsukasahwan.jwt.security.token.RefreshTokenRevokeManager;
 import io.github.tsukasahwan.jwt.util.JwtUtils;
 
-import java.util.Objects;
-
 /**
  * @author Teamo
  * @since 2025/4/11
@@ -101,7 +99,7 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
 
         String accessSubject = accessClaims.getSubject();
         String refreshSubject = refreshClaims.getSubject();
-        if (!Objects.equals(accessSubject, refreshSubject)) {
+        if (accessSubject == null || !accessSubject.equals(refreshSubject)) {
             String message = String.format(
                     "Token subjects mismatch (Access token subject: %s, Refresh token subject: %s)",
                     accessSubject,
@@ -127,7 +125,7 @@ public class DefaultJwtAuthenticationManager implements JwtAuthenticationManager
             throw new IllegalArgumentException("Token cannot be null");
         }
         String tokenSubject = token.getSubject();
-        if (!Objects.equals(subject, tokenSubject)) {
+        if (!subject.equals(tokenSubject)) {
             String grantType = token.getGrantType().getValue();
             String message = String.format(
                     "Subject mismatch (Provided: %s, Token subject: %s, Grant type: '%s')",

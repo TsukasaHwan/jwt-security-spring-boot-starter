@@ -54,12 +54,12 @@ public class JwtUtils {
     public static JwtToken accessToken(String subject) {
         Assert.hasText(subject, "'subject' must not be empty");
         Instant now = Instant.now();
-        JwtClaimsSet accessClaims = JwtClaimsSet.builder()
+        JwtClaimsSet accessClaims = JwtClaimsSet
+                .withGrantType(JwtGrantType.ACCESS_TOKEN)
                 .id(IdUtils.simpleUUID())
                 .subject(subject)
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.getExpiresIn()))
-                .grantType(JwtGrantType.ACCESS_TOKEN)
                 .build();
         return token(accessClaims);
     }
@@ -73,12 +73,12 @@ public class JwtUtils {
     public static JwtToken refreshToken(String subject) {
         Assert.hasText(subject, "'subject' must not be empty");
         Instant now = Instant.now();
-        JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
+        JwtClaimsSet refreshClaims = JwtClaimsSet
+                .withGrantType(JwtGrantType.REFRESH_TOKEN)
                 .id(IdUtils.simpleUUID())
                 .subject(subject)
                 .issuedAt(now)
                 .expiresAt(now.plus(properties.getRefreshTokenExpiresIn()))
-                .grantType(JwtGrantType.REFRESH_TOKEN)
                 .build();
         return token(refreshClaims);
     }
@@ -222,7 +222,8 @@ public class JwtUtils {
 
     private static String serialize(JwtClaimsSet claims) {
         Assert.notNull(claims, "claims must not be null");
-        JWTClaimsSet jwtClaimsSet = convert(claims);
+        JwtClaimsSet checkedClaims = check(claims);
+        JWTClaimsSet jwtClaimsSet = convert(checkedClaims);
 
         SignedJWT signedJwt = new SignedJWT(DEFAULT_JWS_HEADER, jwtClaimsSet);
         JWSSigner jwsSigner = new RSASSASigner(properties.getSecret().getPrivateKey());
@@ -234,6 +235,29 @@ public class JwtUtils {
         }
 
         return signedJwt.serialize();
+    }
+
+    private static JwtClaimsSet check(JwtClaimsSet claims) {
+        JwtClaimsSet.Builder from = JwtClaimsSet.from(claims);
+
+        // check expiresAt
+        Instant expiresAt = claims.getExpiresAt();
+        if (expiresAt == null) {
+            JwtGrantType grantType = claims.getGrantType();
+            if (JwtGrantType.REFRESH_TOKEN.equals(grantType)) {
+                from.expiresAt(Instant.now().plus(properties.getRefreshTokenExpiresIn()));
+            } else {
+                from.expiresAt(Instant.now().plus(properties.getExpiresIn()));
+            }
+        }
+
+        // check jti
+        String id = claims.getId();
+        if (!StringUtils.hasText(id)) {
+            from.id(IdUtils.simpleUUID());
+        }
+
+        return from.build();
     }
 
     private static JWTClaimsSet convert(JwtClaimsSet claims) {
