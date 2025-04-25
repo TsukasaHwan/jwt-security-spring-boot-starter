@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -349,7 +350,7 @@ public class JwtUtils {
         }
         Instant expiresAt = jwtToken.getExpiresAt();
         if (expiresAt != null && expiresAt.isBefore(Instant.now())) {
-            throw new ExpiredJwtException("JWT expired at: " + expiresAt);
+            throw new ExpiredJwtException("JWT expired at: " + expiresAt.atZone(ZoneId.systemDefault()));
         }
     }
 
