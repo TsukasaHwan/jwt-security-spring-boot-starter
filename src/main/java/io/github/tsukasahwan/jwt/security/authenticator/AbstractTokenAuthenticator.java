@@ -64,7 +64,7 @@ public abstract class AbstractTokenAuthenticator implements InitializingBean, Ap
                 if (sharedRefreshTokenMatcher != null) {
                     return;
                 }
-                RequestMappingHandlerMapping handlerMapping = context.getBean(RequestMappingHandlerMapping.class);
+                RequestMappingHandlerMapping handlerMapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
                 List<RequestMappingInfo> refreshTokenApiMapping = handlerMapping.getHandlerMethods().entrySet()
                         .stream()
                         .filter(entry -> Objects.nonNull(ClassUtils.getAnnotation(entry.getValue(), RefreshTokenApi.class)))

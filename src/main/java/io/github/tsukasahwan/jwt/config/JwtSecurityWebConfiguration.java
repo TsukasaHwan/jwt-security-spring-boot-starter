@@ -194,7 +194,7 @@ public class JwtSecurityWebConfiguration {
 
     private List<PathPatternRequestMatcher> extractPermitAllAnnotationPath() {
         List<PathPatternRequestMatcher> matchers = new ArrayList<>(16);
-        RequestMappingHandlerMapping mapping = this.context.getBean(RequestMappingHandlerMapping.class);
+        RequestMappingHandlerMapping mapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
         mapping.getHandlerMethods().forEach((requestMappingInfo, handlerMethod) -> {
             if (requestMappingInfo == null ||
                 ClassUtils.getAnnotation(handlerMethod, PermitAll.class) == null) {
