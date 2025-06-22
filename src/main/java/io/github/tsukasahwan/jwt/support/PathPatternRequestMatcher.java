@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.server.PathContainer;
 import org.springframework.http.server.RequestPath;
-import org.springframework.lang.Nullable;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -256,7 +255,7 @@ public final class PathPatternRequestMatcher implements RequestMatcher {
          * @param path   the path pattern to match
          * @return the {@link Builder} for more configuration
          */
-        public PathPatternRequestMatcher matcher(@Nullable HttpMethod method, String path) {
+        public PathPatternRequestMatcher matcher(HttpMethod method, String path) {
             Assert.notNull(path, "pattern cannot be null");
             Assert.isTrue(path.startsWith("/"), "pattern must start with a /");
             PathPattern pathPattern = this.parser.parse(this.basePath + path);

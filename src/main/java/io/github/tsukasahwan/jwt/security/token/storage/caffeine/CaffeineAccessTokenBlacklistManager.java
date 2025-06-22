@@ -38,7 +38,6 @@ public class CaffeineAccessTokenBlacklistManager extends AbstractAccessTokenBlac
         this.validate(accessToken);
 
         final String cacheKey = buildKey(accessToken.getId());
-        Boolean hasKey = this.cache.getIfPresent(cacheKey) != null;
-        return Boolean.TRUE.equals(hasKey);
+        return this.cache.getIfPresent(cacheKey) != null;
     }
 }

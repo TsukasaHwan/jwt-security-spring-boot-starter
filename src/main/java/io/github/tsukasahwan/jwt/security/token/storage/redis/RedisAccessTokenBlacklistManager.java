@@ -34,7 +34,6 @@ public class RedisAccessTokenBlacklistManager extends AbstractAccessTokenBlackli
         this.validate(accessToken);
         final String cacheKey = buildKey(accessToken.getId());
 
-        Boolean hasKey = this.redisTemplate.hasKey(cacheKey);
-        return Boolean.TRUE.equals(hasKey);
+        return this.redisTemplate.hasKey(cacheKey);
     }
 }

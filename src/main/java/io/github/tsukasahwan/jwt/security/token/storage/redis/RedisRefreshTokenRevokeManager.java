@@ -40,8 +40,7 @@ public class RedisRefreshTokenRevokeManager extends AbstractRefreshTokenRevokeMa
         this.validate(refreshToken);
         final String cacheKey = buildKey(refreshToken);
 
-        Boolean hasKey = this.redisTemplate.hasKey(cacheKey);
-        return Boolean.FALSE.equals(hasKey);
+        return !this.redisTemplate.hasKey(cacheKey);
     }
 
     @Override
