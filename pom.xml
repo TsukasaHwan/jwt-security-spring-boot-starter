@@ -6,7 +6,7 @@
 
     <groupId>io.github.tsukasahwan</groupId>
     <artifactId>jwt-security-spring-boot-starter</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 
     <name>jwt-security-spring-boot-starter</name>
     <description>
@@ -94,7 +94,6 @@
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
             <version>3.0.2</version>
-            <optional>true</optional>
         </dependency>
 
         <!--JWT-->
