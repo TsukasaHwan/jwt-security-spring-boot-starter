@@ -51,7 +51,7 @@ public class WebUtils {
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setContentType(contentType);
         try (PrintWriter out = response.getWriter()) {
-            out.append(JsonUtil.toJson(result));
+            out.append(JsonUtils.toJson(result));
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         }

@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
  *
  * @author Teamo
  */
-public class JsonUtil {
+public class JsonUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(JsonUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(JsonUtils.class);
 
     /**
      * 将对象序列化成json字符串

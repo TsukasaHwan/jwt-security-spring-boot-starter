@@ -199,7 +199,7 @@ public class JwtUtils {
         Assert.notNull(name, "Name must not be null");
         Assert.notNull(claimType, "Claim type must not be null");
         Map<String, Object> claims = getJwtToken().getClaims();
-        return JsonUtil.convertValue(claims.get(name), claimType);
+        return JsonUtils.convertValue(claims.get(name), claimType);
     }
 
     /**
@@ -306,7 +306,7 @@ public class JwtUtils {
             claims.put(JwtClaimNames.EXP, Instant.ofEpochSecond((Long) claims.get(JwtClaimNames.EXP)));
         }
         if (claims.containsKey(JwtClaimNames.GRANT_TYPE)) {
-            claims.put(JwtClaimNames.GRANT_TYPE, JsonUtil.convertValue(claims.get(JwtClaimNames.GRANT_TYPE), JwtGrantType.class));
+            claims.put(JwtClaimNames.GRANT_TYPE, JsonUtils.convertValue(claims.get(JwtClaimNames.GRANT_TYPE), JwtGrantType.class));
         }
         return claims;
     }
