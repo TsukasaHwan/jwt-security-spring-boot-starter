@@ -22,7 +22,7 @@
 - **Spring Security集成**
     - 自定义认证过滤器链
     - 线程安全上下文传播
-    - 支持`@PermitAll`注解路径发现
+    - 支持`@PermitAll`（允许匿名访问）注解路径发现
 - **灵活配置**
   通过配置文件实现全参数控制
 
@@ -63,7 +63,7 @@ jwt:
     expires-in: 30m
     # 刷新令牌过期时间
     refresh-token-expires-in: 15d
-    # 允许匿名访问的资源路径
+    # 允许匿名访问的资源路径（默认：/error，可与@PermitAll注解路径合并）
     permit-all-paths:
       - /error
     # 指定刷新token的请求路径
