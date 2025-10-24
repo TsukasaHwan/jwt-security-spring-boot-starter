@@ -63,6 +63,9 @@ jwt:
     expires-in: 30m
     # 刷新令牌过期时间
     refresh-token-expires-in: 15d
+    # 允许匿名访问的资源路径
+    permit-all-paths:
+      - /error
     # 指定刷新token的请求路径
     # refresh-token-path:
     # 采用@RefreshTokenApi注解形式指定刷新令牌的请求路径（设置为true时，refresh-token-path失效并且只能指定一个刷新路径）
