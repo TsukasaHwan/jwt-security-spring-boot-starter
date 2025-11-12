@@ -16,7 +16,7 @@
     - 刷新令牌撤销机制
     - 访问令牌黑名单功能
     - 主体一致性校验
-    - RSA256加密
+    - **多算法支持**：支持RSA256和HMAC-SHA256算法
 - **存储抽象**
   支持Redis和Caffeine两种存储方案
 - **Spring Security集成**
@@ -52,6 +52,7 @@ implementation 'io.github.tsukasahwan:jwt-security-spring-boot-starter:${version
 
 在`application.yml`中添加JWT安全配置：
 
+#### RSA256算法配置（默认）
 ```yaml
 jwt:
   security:
@@ -70,10 +71,27 @@ jwt:
     # refresh-token-path:
     # 采用@RefreshTokenApi注解形式指定刷新令牌的请求路径（设置为true时，refresh-token-path失效并且只能指定一个刷新路径）
     enabled-refresh-token-api-annotation: true
-    # RSA256密钥文件路径
+    # 签名算法配置
     secret:
+      # 算法类型：RS256（非对称加密）或 HS256（对称加密）
+      algorithm: RS256
+      # RSA256密钥文件路径（当algorithm为RS256时使用）
       public-key: classpath:app.pub
       private-key: classpath:app.key
+      # HMAC密钥（当algorithm为HS256时使用）
+      # hmac-secret: your-32-byte-hmac-secret-key-base64-encoded
+```
+
+#### HMAC-SHA256算法配置
+```yaml
+jwt:
+  security:
+    # ... 其他配置同上
+    secret:
+      # 使用HMAC-SHA256算法
+      algorithm: HS256
+      # HMAC密钥（32字节，Base64编码）
+      hmac-secret: "MzYtYnl0ZS1zZWNyZXQta2V5LWZvci1obWFjLXNpZ25pbmc="
 ```
 
 ### 3. 启用安全配置
@@ -252,7 +270,70 @@ public class DemoController {
 }
 ```
 
+---
 
+## 多算法支持
+
+### 支持的算法类型
+
+| 算法 | 类型 | 特点 | 适用场景 |
+|------|------|------|----------|
+| **RS256** | 非对称加密 | 公钥验证，私钥签名，安全性高 | 分布式系统、微服务架构 |
+| **HS256** | 对称加密 | 单一密钥，性能好，实现简单 | 单应用、性能敏感场景 |
+
+### 算法选择指南
+
+#### 选择RS256（推荐用于生产环境）
+- **优势**：更高的安全性，公钥可公开分发
+- **场景**：微服务架构、API网关、多服务协作
+- **配置**：
+```yaml
+jwt:
+  security:
+    secret:
+      algorithm: RS256
+      public-key: classpath:app.pub
+      private-key: classpath:app.key
+```
+
+#### 选择HS256
+- **优势**：性能更好，配置简单
+- **场景**：单应用、内部API、性能优先场景
+- **配置**：
+```yaml
+jwt:
+  security:
+    secret:
+      algorithm: HS256
+      hmac-secret: "MzYtYnl0ZS1zZWNyZXQta2V5LWZvci1obWFjLXNpZ25pbmc="
+```
+
+### HMAC密钥生成
+
+#### 使用OpenSSL生成32字节HMAC密钥
+```bash
+# 生成32字节随机密钥（Base64编码）
+openssl rand -base64 32
+
+# 生成32字节随机密钥（十六进制）
+openssl rand -hex 32
+```
+
+#### 使用Java代码生成
+```java
+import java.security.SecureRandom;
+import java.util.Base64;
+
+public class HmacKeyGenerator {
+    public static void main(String[] args) {
+        SecureRandom random = new SecureRandom();
+        byte[] key = new byte[32]; // 32字节 = 256位
+        random.nextBytes(key);
+        String base64Key = Base64.getEncoder().encodeToString(key);
+        System.out.println("HMAC密钥: " + base64Key);
+    }
+}
+```
 
 ---
 
@@ -265,12 +346,19 @@ public class DemoController {
 | `AccessTokenBlacklistManager` | 访问令牌黑名单管理                |
 | `RefreshTokenRevokeManager`   | 刷新令牌撤销管理                  |
 | `TokenAuthenticatorRegistry`  | 令牌类型识别认证器注册            |
+| `JwtSigningStrategy`          | JWT签名策略接口（支持多算法）     |
 
 ### 存储实现
 | 存储类型 | 对应类                                                       | 配置项                   |
 | -------- | ------------------------------------------------------------ | ------------------------ |
 | Redis    | `RedisAccessTokenBlacklistManager`, `RedisRefreshTokenRevokeManager` | `storage-type: redis`    |
 | Caffeine | `CaffeineAccessTokenBlacklistManager`, `CaffeineRefreshTokenRevokeManager` | `storage-type: caffeine` |
+
+### 签名策略实现
+| 算法类型 | 对应类 | 配置项 |
+|----------|--------|--------|
+| RS256 | `RS256SigningStrategy` | `algorithm: RS256` |
+| HS256 | `HS256SigningStrategy` | `algorithm: HS256` |
 
 ---
 
@@ -399,7 +487,6 @@ public interface JwtAuthenticationManager {
      */
     void logout(String subject, JwtToken accessToken);
 }
-```
 
 ### 安全配置项
 
@@ -463,11 +550,23 @@ sequenceDiagram 客户端->>认证服务器: 发送刷新请求（携带Refresh 
    }
    ```
 
+   生成HMAC密钥：
+
+   ```bash
+   # 生成32字节HMAC密钥
+   openssl rand -base64 32
+   ```
+
 2. **生产配置建议**
 
    ```yaml
    jwt:
      security:
+       # 推荐使用RS256算法用于生产环境
+       secret:
+         algorithm: RS256
+         public-key: classpath:app.pub
+         private-key: classpath:app.key
        token-security:
          enabled: true
          storage-type: redis
@@ -513,6 +612,19 @@ public static void main(String[] args) throws IOException {
     RSAUtils.create(2048).genKeyPair(resourcesPath);
 }
 ```
+
+**Q: 如何生成HMAC密钥？**  
+A:使用OpenSSL生成32字节密钥：
+
+```bash
+openssl rand -base64 32
+```
+
+**Q: RS256和HS256算法如何选择?**
+
+A:
+- RS256：适用于分布式系统、微服务架构，安全性更高
+- HS256：适用于单应用、性能敏感场景，配置简单
 
 **Q: 如何自定义令牌有效期？**  
 A: 在配置文件中设置：
