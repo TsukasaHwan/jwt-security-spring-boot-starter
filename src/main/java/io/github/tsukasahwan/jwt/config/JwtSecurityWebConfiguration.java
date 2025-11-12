@@ -33,7 +33,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
-import org.springframework.util.Assert;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
@@ -122,10 +121,6 @@ public class JwtSecurityWebConfiguration {
     @SuppressWarnings("InstantiationOfUtilityClass")
     public JwtUtils jwtUtils() {
         // Need to use JwtSecurityProperties, so register a bean
-        JwtSecurityProperties.Secret secret = jwtSecurityProperties.getSecret();
-        Assert.notNull(secret.getPublicKey(), "RSAPublicKey must not be null");
-        Assert.notNull(secret.getPrivateKey(), "RSAPrivateKey must not be null");
-
         return new JwtUtils(jwtSecurityProperties);
     }
 

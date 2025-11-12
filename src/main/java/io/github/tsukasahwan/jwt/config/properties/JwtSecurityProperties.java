@@ -190,6 +190,11 @@ public class JwtSecurityProperties {
     public static class Secret {
 
         /**
+         * JWT签名算法类型（默认RS256）
+         */
+        private AlgorithmType algorithm = AlgorithmType.RS256;
+
+        /**
          * RSA公钥，支持 classpath: xxx.pub
          */
         private RSAPublicKey publicKey;
@@ -198,6 +203,34 @@ public class JwtSecurityProperties {
          * RSA私钥，支持 classpath: xxx.key
          */
         private RSAPrivateKey privateKey;
+
+        /**
+         * HMAC密钥，当algorithm为HS256时必填
+         */
+        private String hmacSecret;
+
+        /**
+         * JWT签名算法类型枚举
+         */
+        public enum AlgorithmType {
+            /**
+             * RSA非对称加密算法（使用SHA-256哈希）
+             */
+            RS256,
+
+            /**
+             * HMAC对称加密算法（使用SHA-256哈希）
+             */
+            HS256
+        }
+
+        public AlgorithmType getAlgorithm() {
+            return algorithm;
+        }
+
+        public void setAlgorithm(AlgorithmType algorithm) {
+            this.algorithm = algorithm;
+        }
 
         public RSAPublicKey getPublicKey() {
             return publicKey;
@@ -213,6 +246,14 @@ public class JwtSecurityProperties {
 
         public void setPrivateKey(RSAPrivateKey privateKey) {
             this.privateKey = privateKey;
+        }
+
+        public String getHmacSecret() {
+            return hmacSecret;
+        }
+
+        public void setHmacSecret(String hmacSecret) {
+            this.hmacSecret = hmacSecret;
         }
     }
 

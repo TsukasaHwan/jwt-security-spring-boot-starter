@@ -1,8 +1,9 @@
 package io.github.tsukasahwan.jwt.util;
 
-import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSObject;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.github.tsukasahwan.jwt.config.properties.JwtSecurityProperties;
@@ -10,6 +11,8 @@ import io.github.tsukasahwan.jwt.core.JwtClaimNames;
 import io.github.tsukasahwan.jwt.core.JwtClaimsSet;
 import io.github.tsukasahwan.jwt.core.JwtGrantType;
 import io.github.tsukasahwan.jwt.core.JwtToken;
+import io.github.tsukasahwan.jwt.core.strategy.JwtSigningStrategy;
+import io.github.tsukasahwan.jwt.core.strategy.JwtSigningStrategyFactory;
 import io.github.tsukasahwan.jwt.exception.ExpiredJwtException;
 import io.github.tsukasahwan.jwt.exception.InvalidTokenException;
 import io.github.tsukasahwan.jwt.filter.JwtAuthenticationFilter;
@@ -36,14 +39,13 @@ public class JwtUtils {
 
     private static final String ENCODING_ERROR_MESSAGE_TEMPLATE = "An error occurred while attempting to encode the Jwt: %s";
 
-    private static final JWSHeader DEFAULT_JWS_HEADER = new JWSHeader.Builder(JWSAlgorithm.RS256)
-            .type(JOSEObjectType.JWT)
-            .build();
-
     private static JwtSecurityProperties properties;
+
+    private static JwtSigningStrategy signingStrategy;
 
     public JwtUtils(JwtSecurityProperties properties) {
         JwtUtils.properties = properties;
+        JwtUtils.signingStrategy = JwtSigningStrategyFactory.createStrategy(properties.getSecret());
     }
 
     /**
@@ -226,8 +228,8 @@ public class JwtUtils {
         Assert.notNull(claims, "claims must not be null");
         JWTClaimsSet jwtClaimsSet = convert(claims);
 
-        SignedJWT signedJwt = new SignedJWT(DEFAULT_JWS_HEADER, jwtClaimsSet);
-        JWSSigner jwsSigner = new RSASSASigner(properties.getSecret().getPrivateKey());
+        SignedJWT signedJwt = new SignedJWT(signingStrategy.createJWSHeader(), jwtClaimsSet);
+        JWSSigner jwsSigner = signingStrategy.createSigner();
         try {
             signedJwt.sign(jwsSigner);
         } catch (JOSEException e) {
@@ -327,7 +329,7 @@ public class JwtUtils {
     }
 
     private static void verify(JWSObject jwsObject) {
-        JWSVerifier jwsVerifier = new RSASSAVerifier(properties.getSecret().getPublicKey());
+        JWSVerifier jwsVerifier = signingStrategy.createVerifier();
 
         boolean verify;
         try {
