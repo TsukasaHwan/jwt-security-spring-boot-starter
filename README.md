@@ -487,6 +487,7 @@ public interface JwtAuthenticationManager {
      */
     void logout(String subject, JwtToken accessToken);
 }
+```
 
 ### 安全配置项
 
