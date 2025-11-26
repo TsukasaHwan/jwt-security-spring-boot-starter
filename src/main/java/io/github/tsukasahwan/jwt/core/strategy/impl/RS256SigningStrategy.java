@@ -15,15 +15,17 @@ public class RS256SigningStrategy implements JwtSigningStrategy {
 
     private final JwtSecurityProperties.Secret secret;
 
+    private static final JWSHeader DEFAULT_JWS_HEADER = new JWSHeader.Builder(JWSAlgorithm.RS256)
+            .type(JOSEObjectType.JWT)
+            .build();
+
     public RS256SigningStrategy(JwtSecurityProperties.Secret secret) {
         this.secret = secret;
     }
 
     @Override
     public JWSHeader createJWSHeader() {
-        return new JWSHeader.Builder(JWSAlgorithm.RS256)
-                .type(JOSEObjectType.JWT)
-                .build();
+        return DEFAULT_JWS_HEADER;
     }
 
     @Override
